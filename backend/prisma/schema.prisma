@@ -1,0 +1,69 @@
+generator client {
+  provider   = "prisma-client-js"
+  engineType = "library"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String     @id @default(cuid())
+  name         String
+  email        String     @unique
+  password     String                        // Hashed via Bun.password
+  avatarUrl    String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  bookmarks    Bookmark[]
+  likes        Like[]
+}
+
+model Article {
+  id              String     @id @default(cuid())
+  externalId      String     @unique
+  title           String
+  originalContent String?
+  summary         String
+  sourceUrl       String?
+  sourceName      String?
+  imageUrl        String?
+  category        String?
+  language        String     @default("en")
+  publishedAt     DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  bookmarks       Bookmark[]
+  likes           Like[]
+
+  @@index([createdAt(sort: Desc), id(sort: Desc)])
+  @@index([category])
+  @@index([language])
+}
+
+model Bookmark {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  articleId String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, articleId])       // User hanya bisa bookmark 1x per artikel
+  @@index([userId])
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  articleId String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, articleId])       // User hanya bisa like 1x per artikel
+  @@index([userId])
+}
