@@ -11,9 +11,13 @@ datasource db {
 model User {
   id           String     @id @default(cuid())
   name         String
+  username     String?    @unique
   email        String     @unique
   password     String                        // Hashed via Bun.password
   avatarUrl    String?
+  dateOfBirth  String?
+  gender       String?
+  address      String?
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 

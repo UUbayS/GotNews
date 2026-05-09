@@ -35,7 +35,7 @@ class NewsService {
     final response = isCurrentlyLiked 
         ? await ApiClient.delete(endpoint)
         : await ApiClient.post(endpoint);
-    return response.statusCode == 200;
+    return response.statusCode >= 200 && response.statusCode < 300;
   }
 
   static Future<bool> toggleBookmark(String articleId, bool isCurrentlyBookmarked) async {
@@ -43,6 +43,15 @@ class NewsService {
     final response = isCurrentlyBookmarked 
         ? await ApiClient.delete(endpoint)
         : await ApiClient.post(endpoint);
-    return response.statusCode == 200;
+    return response.statusCode >= 200 && response.statusCode < 300;
+  }
+
+  static Future<List<NewsItem>> fetchBookmarks() async {
+    final response = await ApiClient.get('/bookmarks');
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return (data['data'] as List).map((i) => NewsItem.fromJson(i)).toList();
+    }
+    throw Exception('Failed to fetch bookmarks');
   }
 }

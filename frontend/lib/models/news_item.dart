@@ -2,6 +2,7 @@ class NewsItem {
   final String id;
   final String title;
   final String summary;
+  final String? originalContent;
   final String? imageUrl;
   final String? sourceName;
   final String? category;
@@ -16,6 +17,7 @@ class NewsItem {
     required this.id,
     required this.title,
     required this.summary,
+    this.originalContent,
     this.imageUrl,
     this.sourceName,
     this.category,
@@ -31,6 +33,7 @@ class NewsItem {
       id: json['id'],
       title: json['title'],
       summary: json['summary'],
+      originalContent: json['originalContent'],
       imageUrl: json['imageUrl'],
       sourceName: json['sourceName'],
       category: json['category'],

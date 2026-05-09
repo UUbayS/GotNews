@@ -80,6 +80,7 @@ export const feedRoutes = new Elysia({ prefix: '/api' })
       id: a.id,
       title: a.title,
       summary: a.summary,
+      originalContent: a.originalContent,
       imageUrl: a.imageUrl,
       sourceName: a.sourceName,
       category: a.category,

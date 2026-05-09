@@ -22,6 +22,7 @@ export const interactionRoutes = new Elysia({ prefix: '/api' })
       })
       return { success: true, message: 'Bookmarked' }
     } catch (e) {
+      console.error('[Interaction] Bookmark POST error:', e)
       return error(400, { message: 'Already bookmarked or error' })
     }
   }, { requireAuth: true })
@@ -40,6 +41,7 @@ export const interactionRoutes = new Elysia({ prefix: '/api' })
       })
       return { success: true, message: 'Bookmark removed' }
     } catch (e) {
+      console.error('[Interaction] Bookmark DELETE error:', e)
       return error(400, { message: 'Not bookmarked or error' })
     }
   }, { requireAuth: true })
@@ -51,13 +53,38 @@ export const interactionRoutes = new Elysia({ prefix: '/api' })
     const bookmarks = await prisma.bookmark.findMany({
       where: { userId: user.id },
       include: {
-        article: true
+        article: {
+          include: {
+            _count: {
+              select: { likes: true }
+            }
+          }
+        }
       },
       orderBy: { createdAt: 'desc' }
     })
 
+    const articleIds = bookmarks.map(b => b.articleId)
+    const userLikes = await prisma.like.findMany({
+      where: { userId: user.id, articleId: { in: articleIds } }
+    })
+    const likedSet = new Set(userLikes.map(l => l.articleId))
+
     return {
-      data: bookmarks.map(b => b.article)
+      data: bookmarks.map(b => ({
+        id: b.article.id,
+        title: b.article.title,
+        summary: b.article.summary,
+        originalContent: b.article.originalContent,
+        imageUrl: b.article.imageUrl,
+        sourceName: b.article.sourceName,
+        category: b.article.category,
+        language: b.article.language,
+        publishedAt: b.article.publishedAt,
+        likesCount: b.article._count.likes,
+        isLiked: likedSet.has(b.article.id),
+        isBookmarked: true
+      }))
     }
   }, { requireAuth: true })
 
