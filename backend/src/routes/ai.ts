@@ -10,29 +10,30 @@ export const aiRoutes = new Elysia({ prefix: '/api' })
    * POST /api/chat
    * Protected route for logged in users to ask questions about an article.
    */
-  .post('/chat', async ({ body, user, error }) => {
+  .post('/chat', async ({ body, user, set }) => {
     const { articleId, question } = body
     
-    // Check if user is authenticated
-    if (!user) return error(401, { message: 'Unauthorized. Please login to use AI features.' })
+    if (!user) {
+      set.status = 401
+      return { message: 'Unauthorized. Please login to use AI features.' }
+    }
     
-    // 1. Fetch article from DB to get context
-    const article = await prisma.article.findUnique({
-      where: { id: articleId }
-    })
+    const article = await prisma.article.findUnique({ where: { id: articleId } })
     
-    if (!article) return error(404, { message: 'Article not found' })
+    if (!article) {
+      set.status = 404
+      return { message: 'Article not found' }
+    }
     
-    // 2. Prepare context (prefer original content if available, else summary)
     const context = article.originalContent || article.summary || article.title
     
-    // 3. Ask AI
     try {
       const answer = await askAIAboutArticle(context, question)
       return { answer }
     } catch (e) {
       console.error('AI Chat Error:', e)
-      return error(500, { message: 'AI failed to respond' })
+      set.status = 500
+      return { message: 'AI failed to respond' }
     }
   }, {
     body: t.Object({

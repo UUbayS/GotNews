@@ -6,7 +6,7 @@ import { authPlugin } from '../middleware/auth'
 export const feedRoutes = new Elysia({ prefix: '/api' })
   .use(authPlugin)
   
-  .get('/feed', async ({ query, user, error }) => {
+  .get('/feed', async ({ query, user, set }) => {
     const limit = Math.min(Number(query.limit) || 10, 50)
     const cursor = query.cursor as string | undefined
     const category = query.category as string | undefined
@@ -16,7 +16,8 @@ export const feedRoutes = new Elysia({ prefix: '/api' })
     if (cursor) {
       decodedCursor = decodeCursor(cursor);
       if (!decodedCursor) {
-        return error(400, { message: 'Invalid cursor' })
+        set.status = 400
+        return { message: 'Invalid cursor' }
       }
     }
 

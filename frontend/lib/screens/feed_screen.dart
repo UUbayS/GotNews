@@ -212,15 +212,17 @@ class _FeedScreenState extends State<FeedScreen> {
                             color: item.isBookmarked ? Colors.blue : Colors.white,
                           ),
                           onPressed: () async {
-                            final success = await NewsService.toggleBookmark(item.id, item.isBookmarked);
-                            if (success) {
-                              setState(() {
-                                item.toggleBookmark();
-                              });
-                            } else {
+                            try {
+                              final success = await NewsService.toggleBookmark(item.id, item.isBookmarked);
+                              if (success && context.mounted) {
+                                setState(() {
+                                  item.toggleBookmark();
+                                });
+                              }
+                            } catch (e) {
                               if (context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Failed to update bookmark. Please login first.')),
+                                  SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
                                 );
                               }
                             }

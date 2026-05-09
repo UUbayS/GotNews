@@ -12,6 +12,8 @@ class MainLayout extends StatefulWidget {
   State<MainLayout> createState() => _MainLayoutState();
 }
 
+class _MainLayoutState extends State<MainLayout> {
+  int _currentIndex = 0;
   final GlobalKey<BookmarkScreenState> _bookmarkKey = GlobalKey<BookmarkScreenState>();
   
   late final List<Widget> _screens;

@@ -33,6 +33,12 @@ class _NewsListTileState extends State<NewsListTile> {
           );
         }
       }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isBookmarking = false);
     }

@@ -43,7 +43,12 @@ class NewsService {
     final response = isCurrentlyBookmarked 
         ? await ApiClient.delete(endpoint)
         : await ApiClient.post(endpoint);
-    return response.statusCode >= 200 && response.statusCode < 300;
+    
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return true;
+    } else {
+      throw Exception('Status ${response.statusCode}: ${response.body}');
+    }
   }
 
   static Future<List<NewsItem>> fetchBookmarks() async {

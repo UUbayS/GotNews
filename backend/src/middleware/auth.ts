@@ -34,8 +34,11 @@ export const authPlugin = new Elysia()
   })
   .macro(({ onBeforeHandle }) => ({
     requireAuth() {
-      onBeforeHandle(({ user, error }) => {
-        if (!user) return error(401, { message: 'Unauthorized' })
+      onBeforeHandle(({ user, set }) => {
+        if (!user) {
+          set.status = 401
+          return { message: 'Unauthorized' }
+        }
       })
     }
   }))

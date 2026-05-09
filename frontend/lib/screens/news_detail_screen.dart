@@ -31,12 +31,12 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
         setState(() {
           _item.toggleBookmark();
         });
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Failed to update bookmark. Please check your connection or login status.')),
-          );
-        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
+        );
       }
     } finally {
       if (mounted) setState(() => _isBookmarking = false);

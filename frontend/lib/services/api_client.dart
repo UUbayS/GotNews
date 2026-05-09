@@ -6,10 +6,10 @@ class ApiClient {
   static const String baseUrl = 'http://10.0.2.2:3000/api'; // Android emulator localhost
   static const storage = FlutterSecureStorage();
 
-  static Future<Map<String, String>> _getHeaders() async {
+  static Future<Map<String, String>> _getHeaders({bool hasBody = false}) async {
     final token = await storage.read(key: 'accessToken');
     return {
-      'Content-Type': 'application/json',
+      if (hasBody) 'Content-Type': 'application/json',
       if (token != null) 'Authorization': 'Bearer $token',
     };
   }
@@ -20,7 +20,7 @@ class ApiClient {
   }
 
   static Future<http.Response> post(String endpoint, {Map<String, dynamic>? body}) async {
-    final headers = await _getHeaders();
+    final headers = await _getHeaders(hasBody: body != null);
     return await http.post(
       Uri.parse('$baseUrl$endpoint'),
       headers: headers,
@@ -29,7 +29,7 @@ class ApiClient {
   }
 
   static Future<http.Response> put(String endpoint, {Map<String, dynamic>? body}) async {
-    final headers = await _getHeaders();
+    final headers = await _getHeaders(hasBody: body != null);
     return await http.put(
       Uri.parse('$baseUrl$endpoint'),
       headers: headers,

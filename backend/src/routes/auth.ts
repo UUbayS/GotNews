@@ -7,24 +7,20 @@ export const authRoutes = new Elysia({ prefix: '/api/auth' })
   .use(authPlugin)
   
   // REGISTER
-  .post('/register', async ({ body, jwt, jwtRefresh, error }) => {
+  .post('/register', async ({ body, jwt, jwtRefresh, set }) => {
     const { firstName, lastName, email, dateOfBirth, password: plainPassword } = body
     
     const existingUser = await prisma.user.findUnique({ where: { email } })
     if (existingUser) {
-      return error(400, { message: 'Email already exists' })
+      set.status = 400
+      return { message: 'Email already exists' }
     }
 
     const hashedPassword = await password.hash(plainPassword)
     const name = `${firstName} ${lastName}`.trim()
     
     const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-        dateOfBirth
-      }
+      data: { name, email, password: hashedPassword, dateOfBirth }
     })
 
     const accessToken = await jwt.sign({ id: user.id })
@@ -46,7 +42,7 @@ export const authRoutes = new Elysia({ prefix: '/api/auth' })
   })
 
   // LOGIN
-  .post('/login', async ({ body, jwt, jwtRefresh, error }) => {
+  .post('/login', async ({ body, jwt, jwtRefresh, set }) => {
     const { identifier, password: plainPassword } = body
     
     const user = await prisma.user.findFirst({
@@ -58,12 +54,14 @@ export const authRoutes = new Elysia({ prefix: '/api/auth' })
       }
     })
     if (!user) {
-      return error(401, { message: 'Invalid credentials' })
+      set.status = 401
+      return { message: 'Invalid credentials' }
     }
 
     const isValid = await password.verify(plainPassword, user.password)
     if (!isValid) {
-      return error(401, { message: 'Invalid credentials' })
+      set.status = 401
+      return { message: 'Invalid credentials' }
     }
 
     const accessToken = await jwt.sign({ id: user.id })
@@ -91,24 +89,24 @@ export const authRoutes = new Elysia({ prefix: '/api/auth' })
   })
 
   // REFRESH TOKEN
-  .post('/refresh', async ({ body, jwt, jwtRefresh, error }) => {
+  .post('/refresh', async ({ body, jwt, jwtRefresh, set }) => {
     const { refreshToken } = body
     
     const payload = await jwtRefresh.verify(refreshToken)
     if (!payload || !payload.id) {
-      return error(401, { message: 'Invalid or expired refresh token' })
+      set.status = 401
+      return { message: 'Invalid or expired refresh token' }
     }
 
     const user = await prisma.user.findUnique({ where: { id: payload.id as string } })
     if (!user) {
-      return error(401, { message: 'User not found' })
+      set.status = 401
+      return { message: 'User not found' }
     }
 
     const newAccessToken = await jwt.sign({ id: user.id })
     
-    return {
-      accessToken: newAccessToken
-    }
+    return { accessToken: newAccessToken }
   }, {
     body: t.Object({
       refreshToken: t.String()
@@ -116,7 +114,7 @@ export const authRoutes = new Elysia({ prefix: '/api/auth' })
   })
 
   // GET CURRENT USER (Protected)
-  .get('/me', async ({ user, error }) => {
+  .get('/me', async ({ user, set }) => {
     const userData = await prisma.user.findUnique({
       where: { id: user?.id },
       select: {
@@ -135,7 +133,10 @@ export const authRoutes = new Elysia({ prefix: '/api/auth' })
       }
     })
 
-    if (!userData) return error(404, { message: 'User not found' })
+    if (!userData) {
+      set.status = 404
+      return { message: 'User not found' }
+    }
     
     return { user: userData }
   }, {
@@ -143,37 +144,33 @@ export const authRoutes = new Elysia({ prefix: '/api/auth' })
   })
 
   // UPDATE PROFILE (Protected)
-  .put('/profile', async ({ body, user, error }) => {
-    if (!user) return error(401, { message: 'Unauthorized' })
+  .put('/profile', async ({ body, user, set }) => {
+    if (!user) {
+      set.status = 401
+      return { message: 'Unauthorized' }
+    }
 
     const { name, username, email, dateOfBirth, gender, address } = body
 
-    // Check if email is taken by someone else
     if (email) {
       const existingEmail = await prisma.user.findUnique({ where: { email } })
       if (existingEmail && existingEmail.id !== user.id) {
-        return error(400, { message: 'Email already in use by another account' })
+        set.status = 400
+        return { message: 'Email already in use by another account' }
       }
     }
 
-    // Check if username is taken by someone else
     if (username) {
       const existingUsername = await prisma.user.findUnique({ where: { username } })
       if (existingUsername && existingUsername.id !== user.id) {
-        return error(400, { message: 'Username already in use' })
+        set.status = 400
+        return { message: 'Username already in use' }
       }
     }
 
     const updatedUser = await prisma.user.update({
       where: { id: user.id },
-      data: {
-        name,
-        username,
-        email,
-        dateOfBirth,
-        gender,
-        address
-      },
+      data: { name, username, email, dateOfBirth, gender, address },
       select: {
         id: true,
         name: true,

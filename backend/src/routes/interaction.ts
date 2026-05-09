@@ -1,4 +1,4 @@
-import { Elysia, t } from 'elysia'
+import { Elysia } from 'elysia'
 import { prisma } from '../lib/prisma'
 import { authPlugin } from '../middleware/auth'
 
@@ -6,29 +6,36 @@ export const interactionRoutes = new Elysia({ prefix: '/api' })
   .use(authPlugin)
   
   // BOOKMARK TOGGLE (POST / DELETE)
-  .post('/articles/:id/bookmark', async ({ params, user, error }) => {
-    if (!user) return error(401, { message: 'Unauthorized' })
+  .post('/articles/:id/bookmark', async ({ params, user, set }) => {
+    if (!user) {
+      set.status = 401
+      return { message: 'Unauthorized' }
+    }
     
     const articleId = params.id
     const article = await prisma.article.findUnique({ where: { id: articleId } })
-    if (!article) return error(404, { message: 'Article not found' })
+    if (!article) {
+      set.status = 404
+      return { message: 'Article not found' }
+    }
 
     try {
       await prisma.bookmark.create({
-        data: {
-          userId: user.id,
-          articleId
-        }
+        data: { userId: user.id, articleId }
       })
       return { success: true, message: 'Bookmarked' }
     } catch (e) {
       console.error('[Interaction] Bookmark POST error:', e)
-      return error(400, { message: 'Already bookmarked or error' })
+      set.status = 400
+      return { message: 'Already bookmarked or error' }
     }
   }, { requireAuth: true })
   
-  .delete('/articles/:id/bookmark', async ({ params, user, error }) => {
-    if (!user) return error(401, { message: 'Unauthorized' })
+  .delete('/articles/:id/bookmark', async ({ params, user, set }) => {
+    if (!user) {
+      set.status = 401
+      return { message: 'Unauthorized' }
+    }
     
     try {
       await prisma.bookmark.delete({
@@ -42,22 +49,24 @@ export const interactionRoutes = new Elysia({ prefix: '/api' })
       return { success: true, message: 'Bookmark removed' }
     } catch (e) {
       console.error('[Interaction] Bookmark DELETE error:', e)
-      return error(400, { message: 'Not bookmarked or error' })
+      set.status = 400
+      return { message: 'Not bookmarked or error' }
     }
   }, { requireAuth: true })
 
   // GET ALL BOOKMARKS
-  .get('/bookmarks', async ({ user, error }) => {
-    if (!user) return error(401, { message: 'Unauthorized' })
+  .get('/bookmarks', async ({ user, set }) => {
+    if (!user) {
+      set.status = 401
+      return { message: 'Unauthorized' }
+    }
 
     const bookmarks = await prisma.bookmark.findMany({
       where: { userId: user.id },
       include: {
         article: {
           include: {
-            _count: {
-              select: { likes: true }
-            }
+            _count: { select: { likes: true } }
           }
         }
       },
@@ -89,24 +98,28 @@ export const interactionRoutes = new Elysia({ prefix: '/api' })
   }, { requireAuth: true })
 
   // LIKE TOGGLE (POST / DELETE)
-  .post('/articles/:id/like', async ({ params, user, error }) => {
-    if (!user) return error(401, { message: 'Unauthorized' })
+  .post('/articles/:id/like', async ({ params, user, set }) => {
+    if (!user) {
+      set.status = 401
+      return { message: 'Unauthorized' }
+    }
     
     try {
       await prisma.like.create({
-        data: {
-          userId: user.id,
-          articleId: params.id
-        }
+        data: { userId: user.id, articleId: params.id }
       })
       return { success: true, message: 'Liked' }
     } catch (e) {
-      return error(400, { message: 'Already liked or error' })
+      set.status = 400
+      return { message: 'Already liked or error' }
     }
   }, { requireAuth: true })
 
-  .delete('/articles/:id/like', async ({ params, user, error }) => {
-    if (!user) return error(401, { message: 'Unauthorized' })
+  .delete('/articles/:id/like', async ({ params, user, set }) => {
+    if (!user) {
+      set.status = 401
+      return { message: 'Unauthorized' }
+    }
     
     try {
       await prisma.like.delete({
@@ -119,6 +132,7 @@ export const interactionRoutes = new Elysia({ prefix: '/api' })
       })
       return { success: true, message: 'Like removed' }
     } catch (e) {
-      return error(400, { message: 'Not liked or error' })
+      set.status = 400
+      return { message: 'Not liked or error' }
     }
   }, { requireAuth: true })
