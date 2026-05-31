@@ -1,10 +1,13 @@
 import { Elysia, t } from 'elysia'
 import { authPlugin } from '../middleware/auth'
 import { askAIAboutArticle } from '../services/ai-chat'
+import { summarizeArticle } from '../services/summarizer'
 import { prisma } from '../lib/prisma'
+import { rateLimit } from '../lib/rate-limit'
 
 export const aiRoutes = new Elysia({ prefix: '/api' })
   .use(authPlugin)
+  .use(rateLimit('ai', 20, 60000))
   
   /**
    * POST /api/chat
@@ -40,5 +43,46 @@ export const aiRoutes = new Elysia({ prefix: '/api' })
       articleId: t.String(),
       question: t.String()
     }),
+    requireAuth: true
+  })
+
+  /**
+   * POST /api/articles/:id/summarize
+   * Protected route — generates AI summary on-demand for a specific article.
+   */
+  .post('/articles/:id/summarize', async ({ params, user, set }) => {
+    if (!user) {
+      set.status = 401
+      return { message: 'Unauthorized. Please login to use AI features.' }
+    }
+
+    const article = await prisma.article.findUnique({ where: { id: params.id } })
+
+    if (!article) {
+      set.status = 404
+      return { message: 'Article not found' }
+    }
+
+    const content = article.originalContent || article.summary || article.title
+
+    try {
+      const summary = await summarizeArticle(content, article.language || 'en')
+      if (!summary || summary.length < 10) {
+        set.status = 500
+        return { message: 'AI failed to generate summary' }
+      }
+
+      await prisma.article.update({
+        where: { id: params.id },
+        data: { summary }
+      })
+
+      return { summary }
+    } catch (e) {
+      console.error('Summarization error:', e)
+      set.status = 500
+      return { message: 'AI summarization failed' }
+    }
+  }, {
     requireAuth: true
   })

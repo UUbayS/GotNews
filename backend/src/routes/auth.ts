@@ -8,33 +8,37 @@ export const authRoutes = new Elysia({ prefix: '/api/auth' })
   
   // REGISTER
   .post('/register', async ({ body, jwt, jwtRefresh, set }) => {
-    const { firstName, lastName, email, dateOfBirth, password: plainPassword } = body
+    const { username, email, dateOfBirth, password: plainPassword } = body
     
-    const existingUser = await prisma.user.findUnique({ where: { email } })
-    if (existingUser) {
+    const existingEmail = await prisma.user.findUnique({ where: { email } })
+    if (existingEmail) {
       set.status = 400
       return { message: 'Email already exists' }
     }
 
+    const existingUsername = await prisma.user.findUnique({ where: { username } })
+    if (existingUsername) {
+      set.status = 400
+      return { message: 'Username already taken' }
+    }
+
     const hashedPassword = await password.hash(plainPassword)
-    const name = `${firstName} ${lastName}`.trim()
     
     const user = await prisma.user.create({
-      data: { name, email, password: hashedPassword, dateOfBirth }
+      data: { name: username, username, email, password: hashedPassword, dateOfBirth }
     })
 
-    const accessToken = await jwt.sign({ id: user.id })
-    const refreshToken = await jwtRefresh.sign({ id: user.id })
+    const accessToken = await jwt.sign({ id: user.id, role: user.role })
+    const refreshToken = await jwtRefresh.sign({ id: user.id, role: user.role })
 
     return {
-      user: { id: user.id, name: user.name, email: user.email, dateOfBirth: user.dateOfBirth },
+      user: { id: user.id, name: user.name, username: user.username, email: user.email, dateOfBirth: user.dateOfBirth, role: user.role },
       accessToken,
       refreshToken
     }
   }, {
     body: t.Object({
-      firstName: t.String({ minLength: 1 }),
-      lastName: t.String({ minLength: 1 }),
+      username: t.String({ minLength: 1 }),
       email: t.String({ format: 'email' }),
       dateOfBirth: t.Optional(t.String()),
       password: t.String({ minLength: 6 })
@@ -64,8 +68,8 @@ export const authRoutes = new Elysia({ prefix: '/api/auth' })
       return { message: 'Invalid credentials' }
     }
 
-    const accessToken = await jwt.sign({ id: user.id })
-    const refreshToken = await jwtRefresh.sign({ id: user.id })
+    const accessToken = await jwt.sign({ id: user.id, role: user.role })
+    const refreshToken = await jwtRefresh.sign({ id: user.id, role: user.role })
 
     return {
       user: { 
@@ -104,8 +108,7 @@ export const authRoutes = new Elysia({ prefix: '/api/auth' })
       return { message: 'User not found' }
     }
 
-    const newAccessToken = await jwt.sign({ id: user.id })
-    
+    const newAccessToken = await jwt.sign({ id: user.id, role: user.role })
     return { accessToken: newAccessToken }
   }, {
     body: t.Object({
@@ -115,13 +118,19 @@ export const authRoutes = new Elysia({ prefix: '/api/auth' })
 
   // GET CURRENT USER (Protected)
   .get('/me', async ({ user, set }) => {
+    if (!user || !user.id) {
+      set.status = 401
+      return { message: 'Unauthorized' }
+    }
+
     const userData = await prisma.user.findUnique({
-      where: { id: user?.id },
+      where: { id: user.id },
       select: {
         id: true,
         name: true,
         username: true,
         email: true,
+        role: true,
         avatarUrl: true,
         dateOfBirth: true,
         gender: true,
@@ -142,6 +151,26 @@ export const authRoutes = new Elysia({ prefix: '/api/auth' })
   }, {
     requireAuth: true
   })
+
+  // LOGOUT (Protected)
+  .post('/logout', async ({ rawToken, set }) => {
+    if (!rawToken) {
+      set.status = 401
+      return { message: 'Unauthorized' }
+    }
+
+    // Decode JWT to get expiry without verifying (already verified by middleware)
+    const payload = JSON.parse(
+      Buffer.from(rawToken.split('.')[1]!, 'base64').toString('ascii')
+    )
+    const expiresAt = new Date(payload.exp * 1000)
+
+    await prisma.invalidatedToken.create({
+      data: { token: rawToken, expiresAt }
+    })
+
+    return { message: 'Logged out successfully' }
+  }, { requireAuth: true })
 
   // UPDATE PROFILE (Protected)
   .put('/profile', async ({ body, user, set }) => {

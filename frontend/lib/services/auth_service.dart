@@ -2,14 +2,17 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'api_client.dart';
 import '../models/user.dart';
+import 'dart:developer' as developer;
 
 class AuthService extends ChangeNotifier {
   User? _currentUser;
   bool _isLoading = true;
+  String? _lastError;
 
   User? get currentUser => _currentUser;
   bool get isAuthenticated => _currentUser != null;
   bool get isLoading => _isLoading;
+  String? get lastError => _lastError;
 
   AuthService() {
     _checkAuthStatus();
@@ -21,20 +24,51 @@ class AuthService extends ChangeNotifier {
       try {
         final response = await ApiClient.get('/auth/me');
         if (response.statusCode == 200) {
-          final data = jsonDecode(response.body);
-          _currentUser = User.fromJson(data['user']);
+          final data = jsonDecode(response.body) as Map<String, dynamic>?;
+          if (data != null && data['user'] != null) {
+            _currentUser = User.fromJson(data['user']);
+          } else {
+            await logout();
+          }
         } else {
           await logout();
         }
       } catch (e) {
-        // Network error, maybe stay logged in or handle gracefully
+        developer.log('Auth status check failed: $e', name: 'AuthService');
       }
     }
     _isLoading = false;
+    _lastError = null;
     notifyListeners();
   }
 
+  Future<void> checkSession() async {
+    final token = await ApiClient.storage.read(key: 'accessToken');
+    if (token == null) {
+      if (_currentUser != null) {
+        _currentUser = null;
+        notifyListeners();
+      }
+      return;
+    }
+    try {
+      final response = await ApiClient.get('/auth/me');
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>?;
+        if (data != null && data['user'] != null) {
+          _currentUser = User.fromJson(data['user']);
+          notifyListeners();
+        }
+      }
+      // Don't logout on non-200 — just keep existing session
+    } catch (e) {
+      // Network error — keep existing session, don't logout
+      developer.log('Session check failed: $e', name: 'AuthService');
+    }
+  }
+
   Future<bool> login(String identifier, String password) async {
+    _lastError = null;
     try {
       final response = await ApiClient.post('/auth/login', body: {
         'identifier': identifier,
@@ -42,40 +76,72 @@ class AuthService extends ChangeNotifier {
       });
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        await ApiClient.storage.write(key: 'accessToken', value: data['accessToken']);
-        await ApiClient.storage.write(key: 'refreshToken', value: data['refreshToken']);
-        _currentUser = User.fromJson(data['user']);
-        notifyListeners();
-        return true;
+        final data = jsonDecode(response.body) as Map<String, dynamic>?;
+        if (data != null) {
+          if (data['accessToken'] != null) {
+            await ApiClient.storage.write(key: 'accessToken', value: data['accessToken']);
+          }
+          if (data['refreshToken'] != null) {
+            await ApiClient.storage.write(key: 'refreshToken', value: data['refreshToken']);
+          }
+          if (data['user'] != null) {
+            _currentUser = User.fromJson(data['user']);
+          }
+          notifyListeners();
+          return true;
+        }
       }
+
+      // Coba parse error message dari response body
+      final body = jsonDecode(response.body) as Map<String, dynamic>?;
+      _lastError = body?['message'] ?? 'Login failed. Please check your credentials.';
     } catch (e) {
-      // Handle error
+      _lastError = 'Network error: Unable to connect to server. Please check your connection.';
     }
+    _isLoading = false;
+    notifyListeners();
     return false;
   }
 
-  Future<bool> register(String firstName, String lastName, String email, String password, {String? dateOfBirth}) async {
+  Future<bool> register(
+    String username,
+    String email,
+    String password, {
+    String? dateOfBirth,
+  }) async {
+    _lastError = null;
     try {
       final response = await ApiClient.post('/auth/register', body: {
-        'firstName': firstName,
-        'lastName': lastName,
+        'username': username,
         'email': email,
         'password': password,
-        if (dateOfBirth != null) 'dateOfBirth': dateOfBirth,
+        if (dateOfBirth != null && dateOfBirth.isNotEmpty) 'dateOfBirth': dateOfBirth,
       });
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        await ApiClient.storage.write(key: 'accessToken', value: data['accessToken']);
-        await ApiClient.storage.write(key: 'refreshToken', value: data['refreshToken']);
-        _currentUser = User.fromJson(data['user']);
-        notifyListeners();
-        return true;
+        final data = jsonDecode(response.body) as Map<String, dynamic>?;
+        if (data != null) {
+          if (data['accessToken'] != null) {
+            await ApiClient.storage.write(key: 'accessToken', value: data['accessToken']);
+          }
+          if (data['refreshToken'] != null) {
+            await ApiClient.storage.write(key: 'refreshToken', value: data['refreshToken']);
+          }
+          if (data['user'] != null) {
+            _currentUser = User.fromJson(data['user']);
+          }
+          notifyListeners();
+          return true;
+        }
       }
+
+      final body = jsonDecode(response.body) as Map<String, dynamic>?;
+      _lastError = body?['message'] ?? 'Registration failed. Please try again.';
     } catch (e) {
-      // Handle error
+      _lastError = 'Network error: Unable to connect to server. Please check your connection.';
     }
+    _isLoading = false;
+    notifyListeners();
     return false;
   }
 
@@ -87,6 +153,7 @@ class AuthService extends ChangeNotifier {
     String? gender,
     String? address,
   }) async {
+    _lastError = null;
     try {
       final response = await ApiClient.put('/auth/profile', body: {
         if (name != null) 'name': name,
@@ -98,14 +165,21 @@ class AuthService extends ChangeNotifier {
       });
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        _currentUser = User.fromJson(data['user']);
+        final data = jsonDecode(response.body) as Map<String, dynamic>?;
+        if (data != null && data['user'] != null) {
+          _currentUser = User.fromJson(data['user']);
+        }
         notifyListeners();
         return true;
       }
+
+      final body = jsonDecode(response.body) as Map<String, dynamic>?;
+      _lastError = body?['message'] ?? 'Failed to update profile.';
     } catch (e) {
-      // Handle error
+      _lastError = 'Network error: Unable to connect to server.';
     }
+    _isLoading = false;
+    notifyListeners();
     return false;
   }
 
@@ -113,6 +187,7 @@ class AuthService extends ChangeNotifier {
     await ApiClient.storage.delete(key: 'accessToken');
     await ApiClient.storage.delete(key: 'refreshToken');
     _currentUser = null;
+    _lastError = null;
     notifyListeners();
   }
 }

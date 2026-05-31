@@ -16,11 +16,34 @@ class NewsDetailScreen extends StatefulWidget {
 class _NewsDetailScreenState extends State<NewsDetailScreen> {
   late NewsItem _item;
   bool _isBookmarking = false;
+  bool _isLiking = false;
+  bool _isSummarizing = false;
+  String? _aiSummary;
 
   @override
   void initState() {
     super.initState();
     _item = widget.item;
+  }
+
+  void _toggleLike() async {
+    setState(() => _isLiking = true);
+    try {
+      final success = await NewsService.toggleLike(_item.id, _item.isLiked);
+      if (success) {
+        setState(() {
+          _item.toggleLike();
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLiking = false);
+    }
   }
 
   void _toggleBookmark() async {
@@ -43,6 +66,28 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
     }
   }
 
+  void _generateSummary() async {
+    if (_isSummarizing) return;
+    setState(() => _isSummarizing = true);
+    try {
+      final summary = await NewsService.summarizeArticle(_item.id);
+      if (mounted) {
+        setState(() => _aiSummary = summary);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('AI Summary generated!')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSummarizing = false);
+    }
+  }
+
   String _formatDate(DateTime? date) {
     if (date == null) return 'Unknown Date';
     return '${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
@@ -57,6 +102,15 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black87),
         actions: [
+          IconButton(
+            icon: _isLiking
+                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                : Icon(
+                    _item.isLiked ? Icons.favorite : Icons.favorite_border,
+                    color: _item.isLiked ? Colors.red : Colors.black87,
+                  ),
+            onPressed: _isLiking ? null : _toggleLike,
+          ),
           IconButton(
             icon: _isBookmarking
                 ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
@@ -184,6 +238,71 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                     ),
                   ),
                   const SizedBox(height: 40),
+
+                  // AI Summary section
+                  if (_aiSummary != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 20),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.withOpacity(0.05),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.blue.withOpacity(0.2)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Row(
+                              children: [
+                                Icon(Icons.auto_awesome, size: 18, color: Colors.blue),
+                                SizedBox(width: 8),
+                                Text(
+                                  'AI Summary',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.blue,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              _aiSummary!,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                color: Colors.black87,
+                                height: 1.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: _isSummarizing ? null : _generateSummary,
+                      icon: _isSummarizing
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.auto_awesome, size: 18),
+                      label: Text(_isSummarizing ? 'Generating...' : 'Generate AI Summary'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.blue,
+                        side: const BorderSide(color: Colors.blue),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 30),
                 ],
               ),
             ),

@@ -13,7 +13,16 @@ export async function scrapeArticleText(url: string): Promise<string> {
       }
     });
 
-    if (!response.ok) return '';
+    if (!response.ok) {
+      console.warn(`HTTP ${response.status} fetching ${url}`);
+      return '';
+    }
+
+    const contentType = response.headers.get('content-type') || '';
+    if (!contentType.includes('text/html') && !contentType.includes('text/plain')) {
+      console.warn(`Skipping non-HTML response for ${url}: Content-Type=${contentType}`);
+      return '';
+    }
     
     const html = await response.text();
     const { document } = parseHTML(html);

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
@@ -19,6 +20,12 @@ class _ExploreScreenState extends State<ExploreScreen> {
   bool _isLoading = true;
   String _selectedCategory = 'All';
 
+  // Search state
+  String _searchQuery = '';
+  List<NewsItem> _searchResults = [];
+  bool _isSearching = false;
+  Timer? _debounceTimer;
+
   final List<String> _categories = [
     'All', 'Sports', 'Politics', 'Business', 'Health', 'Travel', 'Science'
   ];
@@ -27,6 +34,13 @@ class _ExploreScreenState extends State<ExploreScreen> {
   void initState() {
     super.initState();
     _fetchNews();
+  }
+
+  @override
+  void dispose() {
+    _debounceTimer?.cancel();
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchNews() async {
@@ -43,15 +57,75 @@ class _ExploreScreenState extends State<ExploreScreen> {
     }
   }
 
+  void _onSearchChanged(String value) {
+    _debounceTimer?.cancel();
+    setState(() => _searchQuery = value);
+
+    if (value.trim().isEmpty) {
+      setState(() {
+        _isSearching = false;
+        _searchResults = [];
+      });
+      return;
+    }
+
+    if (value.trim().length < 2) return;
+
+    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+      _performSearch();
+    });
+  }
+
+  Future<void> _performSearch() async {
+    if (_searchQuery.trim().length < 2) return;
+
+    setState(() => _isSearching = true);
+
+    try {
+      final categoryFilter = _selectedCategory == 'All' ? null : _selectedCategory.toLowerCase();
+      final result = await NewsService.searchNews(
+        query: _searchQuery.trim(),
+        limit: 20,
+        category: categoryFilter,
+      );
+      if (mounted) {
+        setState(() {
+          _searchResults = result['items'];
+          _isSearching = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isSearching = false);
+      }
+    }
+  }
+
+  void _clearSearch() {
+    _debounceTimer?.cancel();
+    _searchController.clear();
+    setState(() {
+      _searchQuery = '';
+      _isSearching = false;
+      _searchResults = [];
+    });
+  }
+
   void _onCategorySelected(String category) {
     setState(() {
       _selectedCategory = category;
     });
-    _fetchNews();
+    if (_searchQuery.trim().length >= 2) {
+      _performSearch();
+    } else {
+      _fetchNews();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isSearchActive = _searchQuery.trim().length >= 2;
+
     NewsItem? trendingItem = _items.isNotEmpty ? _items.first : null;
     List<NewsItem> latestItems = _items.length > 1 ? _items.sublist(1) : [];
 
@@ -85,7 +159,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
       ),
       body: SafeArea(
         child: RefreshIndicator(
-          onRefresh: _fetchNews,
+          onRefresh: isSearchActive ? _performSearch : _fetchNews,
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 20.0),
             child: Column(
@@ -95,13 +169,16 @@ class _ExploreScreenState extends State<ExploreScreen> {
                 // Search Bar
                 TextField(
                   controller: _searchController,
+                  onChanged: _onSearchChanged,
                   decoration: InputDecoration(
                     hintText: 'Search',
                     prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                    suffixIcon: IconButton(
-                      icon: const Icon(Icons.close, color: Colors.grey),
-                      onPressed: () => _searchController.clear(),
-                    ),
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.close, color: Colors.grey),
+                            onPressed: _clearSearch,
+                          )
+                        : null,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide(color: Colors.grey.shade300),
@@ -113,89 +190,222 @@ class _ExploreScreenState extends State<ExploreScreen> {
                     contentPadding: const EdgeInsets.symmetric(vertical: 0),
                   ),
                 ),
-                const SizedBox(height: 24),
 
-                // Trending Section
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Trending News',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
-                    ),
-                    TextButton(
-                      onPressed: () {},
-                      child: const Text('See all', style: TextStyle(color: Colors.grey)),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                if (_isLoading)
-                  const Center(child: CircularProgressIndicator())
-                else if (trendingItem != null)
-                  _buildTrendingCard(context, trendingItem),
-                
-                const SizedBox(height: 24),
-
-                // Latest Section
-                const Text(
-                  'Latest',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
-                ),
-                const SizedBox(height: 16),
-
-                // Categories
-                SizedBox(
-                  height: 35,
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: _categories.length,
-                    itemBuilder: (context, index) {
-                      final category = _categories[index];
-                      final isSelected = category == _selectedCategory;
-                      return GestureDetector(
-                        onTap: () => _onCategorySelected(category),
-                        child: Container(
-                          margin: const EdgeInsets.only(right: 24),
-                          padding: const EdgeInsets.only(bottom: 8),
-                          decoration: BoxDecoration(
-                            border: Border(
-                              bottom: BorderSide(
-                                color: isSelected ? Colors.blue : Colors.transparent,
-                                width: 2,
+                // ----- Search Mode -----
+                if (isSearchActive) ...[
+                  const SizedBox(height: 24),
+                  const Text(
+                    'Search Results',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+                  ),
+                  const SizedBox(height: 16),
+                  // Categories in search mode
+                  SizedBox(
+                    height: 35,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: _categories.length,
+                      itemBuilder: (context, index) {
+                        final category = _categories[index];
+                        final isSelected = category == _selectedCategory;
+                        return GestureDetector(
+                          onTap: () => _onCategorySelected(category),
+                          child: Container(
+                            margin: const EdgeInsets.only(right: 24),
+                            padding: const EdgeInsets.only(bottom: 8),
+                            decoration: BoxDecoration(
+                              border: Border(
+                                bottom: BorderSide(
+                                  color: isSelected ? Colors.blue : Colors.transparent,
+                                  width: 2,
+                                ),
+                              ),
+                            ),
+                            child: Text(
+                              category,
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: isSelected ? Colors.black87 : Colors.grey,
+                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                               ),
                             ),
                           ),
-                          child: Text(
-                            category,
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: isSelected ? Colors.black87 : Colors.grey,
-                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  if (_isSearching)
+                    _buildShimmerList()
+                  else if (_searchResults.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 40),
+                      child: Center(
+                        child: Text(
+                          'No results found',
+                          style: TextStyle(color: Colors.grey, fontSize: 16),
+                        ),
+                      ),
+                    )
+                  else
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: _searchResults.length,
+                      itemBuilder: (context, index) {
+                        return NewsListTile(item: _searchResults[index]);
+                      },
+                    ),
+                ] else ...[
+                  // ----- Default Explore Mode -----
+                  const SizedBox(height: 24),
+
+                  // Trending Section
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Trending News',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+                      ),
+                      TextButton(
+                        onPressed: () {},
+                        child: const Text('See all', style: TextStyle(color: Colors.grey)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  if (_isLoading)
+                    const Center(child: CircularProgressIndicator())
+                  else if (trendingItem != null)
+                    _buildTrendingCard(context, trendingItem),
+
+                  const SizedBox(height: 24),
+
+                  // Latest Section
+                  const Text(
+                    'Latest',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Categories
+                  SizedBox(
+                    height: 35,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: _categories.length,
+                      itemBuilder: (context, index) {
+                        final category = _categories[index];
+                        final isSelected = category == _selectedCategory;
+                        return GestureDetector(
+                          onTap: () => _onCategorySelected(category),
+                          child: Container(
+                            margin: const EdgeInsets.only(right: 24),
+                            padding: const EdgeInsets.only(bottom: 8),
+                            decoration: BoxDecoration(
+                              border: Border(
+                                bottom: BorderSide(
+                                  color: isSelected ? Colors.blue : Colors.transparent,
+                                  width: 2,
+                                ),
+                              ),
+                            ),
+                            child: Text(
+                              category,
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: isSelected ? Colors.black87 : Colors.grey,
+                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                              ),
                             ),
                           ),
-                        ),
-                      );
-                    },
+                        );
+                      },
+                    ),
                   ),
-                ),
-                const SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
-                // Latest List
-                if (!_isLoading)
-                  ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: latestItems.length,
-                    itemBuilder: (context, index) {
-                      return NewsListTile(item: latestItems[index]);
-                    },
-                  ),
+                  // Latest List
+                  if (!_isLoading)
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: latestItems.length,
+                      itemBuilder: (context, index) {
+                        return NewsListTile(item: latestItems[index]);
+                      },
+                    ),
+                ],
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildShimmerList() {
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: 6,
+      itemBuilder: (context, index) {
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: Shimmer.fromColors(
+            baseColor: Colors.grey[300]!,
+            highlightColor: Colors.grey[100]!,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 100,
+                  height: 70,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        height: 14,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        width: double.infinity,
+                        height: 14,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        width: 100,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -208,7 +418,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
             builder: (context) => NewsDetailScreen(item: item),
           ),
         ).then((_) {
-          // Refresh state when coming back in case bookmark changed
           setState(() {});
         });
       },

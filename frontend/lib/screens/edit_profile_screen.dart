@@ -38,6 +38,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final success = await context.read<AuthService>().updateProfile(
       name: _nameController.text.trim(),
       username: _usernameController.text.trim(),
+      email: _emailController.text.trim(),
       dateOfBirth: _dobController.text.trim(),
       gender: _genderController.text.trim(),
       address: _addressController.text.trim(),
@@ -51,8 +52,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       );
       Navigator.pop(context);
     } else {
+      final error = context.read<AuthService>().lastError;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to update profile')),
+        SnackBar(content: Text(error ?? 'Failed to update profile')),
       );
     }
   }

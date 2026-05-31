@@ -17,6 +17,27 @@ class NewsListTile extends StatefulWidget {
 
 class _NewsListTileState extends State<NewsListTile> {
   bool _isBookmarking = false;
+  bool _isLiking = false;
+
+  void _toggleLike() async {
+    setState(() => _isLiking = true);
+    try {
+      final success = await NewsService.toggleLike(widget.item.id, widget.item.isLiked);
+      if (success) {
+        setState(() {
+          widget.item.toggleLike();
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLiking = false);
+    }
+  }
 
   void _toggleBookmark() async {
     setState(() => _isBookmarking = true);
@@ -44,21 +65,22 @@ class _NewsListTileState extends State<NewsListTile> {
     }
   }
 
+  void _navigateToDetail() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => NewsDetailScreen(item: widget.item),
+      ),
+    ).then((_) {
+      // Refresh state when coming back in case bookmark changed
+      if (mounted) setState(() {});
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: () {
-        if (widget.onTap != null) widget.onTap!();
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => NewsDetailScreen(item: widget.item),
-          ),
-        ).then((_) {
-          // Refresh state when coming back in case bookmark changed
-          setState(() {});
-        });
-      },
+      onTap: _navigateToDetail,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 12.0),
         child: Row(
@@ -141,6 +163,20 @@ class _NewsListTileState extends State<NewsListTile> {
             // More options
             Column(
               children: [
+                IconButton(
+                  icon: _isLiking
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                      : Icon(
+                          widget.item.isLiked ? Icons.favorite : Icons.favorite_border,
+                          color: widget.item.isLiked ? Colors.red : Colors.grey,
+                        ),
+                  onPressed: _isLiking ? null : _toggleLike,
+                ),
+                Text(
+                  widget.item.likesCount > 0 ? '${widget.item.likesCount}' : '',
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 10),
+                ),
+                const SizedBox(height: 4),
                 IconButton(
                   icon: _isBookmarking 
                       ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))

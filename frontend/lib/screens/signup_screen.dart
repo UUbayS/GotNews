@@ -10,20 +10,34 @@ class SignUpScreen extends StatefulWidget {
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
-  final _firstNameController = TextEditingController();
-  final _lastNameController = TextEditingController();
+  final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
   final _dobController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
 
   bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
   bool _isLoading = false;
 
   void _signup() async {
+    if (_passwordController.text.length < 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Password must be at least 6 characters')),
+      );
+      return;
+    }
+
+    if (_passwordController.text != _confirmPasswordController.text) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Passwords do not match')),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
     final success = await context.read<AuthService>().register(
-      _firstNameController.text.trim(),
-      _lastNameController.text.trim(),
+      _usernameController.text.trim(),
       _emailController.text.trim(),
       _passwordController.text,
       dateOfBirth: _dobController.text.trim(),
@@ -31,12 +45,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
     if (!mounted) return;
     setState(() => _isLoading = false);
 
-    if (!success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sign up failed. Please try again.')),
-      );
+    if (success) {
+      Navigator.pop(context);
     } else {
-      Navigator.pop(context); // Go back to login or let auth state handle it
+      final error = context.read<AuthService>().lastError;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error ?? 'Sign up failed. Please try again.')),
+      );
     }
   }
 
@@ -81,23 +96,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
               ),
               const SizedBox(height: 40),
 
-              // Name Row
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _firstNameController,
-                      decoration: _inputDecoration('First Name'),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _lastNameController,
-                      decoration: _inputDecoration('Last Name'),
-                    ),
-                  ),
-                ],
+              // Username Field
+              TextFormField(
+                controller: _usernameController,
+                decoration: _inputDecoration('Username'),
               ),
               const SizedBox(height: 16),
 
@@ -105,6 +107,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               TextFormField(
                 controller: _emailController,
                 decoration: _inputDecoration('Email'),
+                keyboardType: TextInputType.emailAddress,
               ),
               const SizedBox(height: 16),
 
@@ -149,6 +152,26 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ),
                 ),
               ),
+              const SizedBox(height: 8),
+
+              // Confirm Password Field
+              TextFormField(
+                controller: _confirmPasswordController,
+                obscureText: _obscureConfirmPassword,
+                decoration: _inputDecoration('Confirm Password').copyWith(
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                      color: Colors.grey,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscureConfirmPassword = !_obscureConfirmPassword;
+                      });
+                    },
+                  ),
+                ),
+              ),
               const SizedBox(height: 32),
 
               // Sign Up Button
@@ -164,34 +187,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 child: _isLoading 
                     ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                     : const Text('Sign Up', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
-              ),
-              const SizedBox(height: 24),
-
-              // Divider
-              Row(
-                children: [
-                  Expanded(child: Divider(color: Colors.grey.shade300)),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Text('Or', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                  ),
-                  Expanded(child: Divider(color: Colors.grey.shade300)),
-                ],
-              ),
-              const SizedBox(height: 24),
-
-              // Google Button
-              OutlinedButton.icon(
-                onPressed: () {
-                  // TODO: Implement Google Sign In
-                },
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  side: BorderSide(color: Colors.grey.shade300),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-                icon: const Icon(Icons.g_mobiledata, color: Colors.red, size: 24),
-                label: const Text('Sign up with Google', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w600)),
               ),
             ],
           ),

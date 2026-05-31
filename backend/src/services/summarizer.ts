@@ -16,11 +16,15 @@ export async function summarizeArticle(content: string, language: string = 'en')
           { role: 'system', content: systemPrompt },
           { role: 'user', content: content }
         ],
-        model: 'llama3-8b-8192',
+        model: 'llama-3.3-70b-versatile',
         temperature: 0.5,
-        max_tokens: 150,
+        max_tokens: 300,
       });
-      return completion.choices[0]?.message?.content?.trim() || '';
+      const result = completion.choices[0]?.message?.content?.trim() || '';
+      if (!result) {
+        console.error('[Summarizer] Groq returned empty content');
+      }
+      return result;
     } catch (e) {
       console.error('Groq summarization error:', e);
       return '';

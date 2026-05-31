@@ -18,6 +18,7 @@ class _FeedScreenState extends State<FeedScreen> {
   bool _isLoading = false;
   bool _hasMore = true;
   String? _nextCursor;
+  String? _error;
 
   @override
   void initState() {
@@ -27,18 +28,38 @@ class _FeedScreenState extends State<FeedScreen> {
 
   Future<void> _fetchNextPage() async {
     if (_isLoading || !_hasMore) return;
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
 
     try {
-      final result = await NewsService.fetchFeed(cursor: _nextCursor);
+      final isFirstPage = _nextCursor == null;
+      final result = await NewsService.fetchFeed(
+        cursor: _nextCursor,
+        personalized: isFirstPage ? true : false,
+      );
       setState(() {
         _items.addAll(result['items']);
         _nextCursor = result['nextCursor'];
         _hasMore = result['hasMore'];
         _isLoading = false;
+        _error = null;
       });
     } catch (e) {
-      setState(() => _isLoading = false);
+      setState(() {
+        _isLoading = false;
+        if (_items.isEmpty) {
+          _error = 'Failed to load articles. Check your connection.';
+        } else if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Failed to load more articles'),
+              action: SnackBarAction(label: 'Retry', onPressed: _fetchNextPage),
+            ),
+          );
+        }
+      });
     }
   }
 
@@ -47,6 +68,35 @@ class _FeedScreenState extends State<FeedScreen> {
     if (_items.isEmpty && _isLoading) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator(color: Colors.white)),
+      );
+    }
+
+    if (_items.isEmpty && _error != null) {
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.wifi_off, color: Colors.white54, size: 48),
+              const SizedBox(height: 16),
+              Text(
+                _error!,
+                style: const TextStyle(color: Colors.white70, fontSize: 16),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: _fetchNextPage,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Retry'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
       );
     }
 
@@ -205,28 +255,67 @@ class _FeedScreenState extends State<FeedScreen> {
                     ),
                     StatefulBuilder(
                       builder: (context, setState) {
-                        return IconButton(
-                          iconSize: 32,
-                          icon: Icon(
-                            item.isBookmarked ? Icons.bookmark : Icons.bookmark_border,
-                            color: item.isBookmarked ? Colors.blue : Colors.white,
-                          ),
-                          onPressed: () async {
-                            try {
-                              final success = await NewsService.toggleBookmark(item.id, item.isBookmarked);
-                              if (success && context.mounted) {
-                                setState(() {
-                                  item.toggleBookmark();
-                                });
-                              }
-                            } catch (e) {
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
-                                );
-                              }
-                            }
-                          },
+                        return Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Likes
+                            Column(
+                              children: [
+                                IconButton(
+                                  iconSize: 32,
+                                  icon: Icon(
+                                    item.isLiked ? Icons.favorite : Icons.favorite_border,
+                                    color: item.isLiked ? Colors.red : Colors.white,
+                                  ),
+                                  onPressed: () async {
+                                    try {
+                                      final success = await NewsService.toggleLike(item.id, item.isLiked);
+                                      if (success && context.mounted) {
+                                        setState(() {
+                                          item.toggleLike();
+                                        });
+                                      }
+                                    } catch (e) {
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
+                                        );
+                                      }
+                                    }
+                                  },
+                                ),
+                                Text(
+                                  item.likesCount > 0 ? '${item.likesCount}' : '',
+                                  style: const TextStyle(color: Colors.white, fontSize: 11),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(width: 8),
+                            // Bookmark
+                            IconButton(
+                              iconSize: 32,
+                              icon: Icon(
+                                item.isBookmarked ? Icons.bookmark : Icons.bookmark_border,
+                                color: item.isBookmarked ? Colors.blue : Colors.white,
+                              ),
+                              onPressed: () async {
+                                try {
+                                  final success = await NewsService.toggleBookmark(item.id, item.isBookmarked);
+                                  if (success && context.mounted) {
+                                    setState(() {
+                                      item.toggleBookmark();
+                                    });
+                                  }
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
+                                    );
+                                  }
+                                }
+                              },
+                            ),
+                          ],
                         );
                       }
                     )

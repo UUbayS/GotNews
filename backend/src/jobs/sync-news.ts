@@ -1,8 +1,6 @@
 import { prisma } from '../lib/prisma'
 import { fetchLatestNews } from '../services/news-fetcher'
-import { summarizeArticle } from '../services/summarizer'
 import { scrapeArticleText } from '../services/scraper'
-
 export async function syncNewsJob() {
   console.log('🔄 Starting news sync job...')
   
@@ -32,14 +30,13 @@ export async function syncNewsJob() {
         console.log(`Skipping potential ad: ${raw.title}`);
         continue;
       }
-
+      
       // 2. Check if exists
       const exists = await prisma.article.findUnique({
         where: { externalId: raw.article_id }
       })
       
       if (exists) {
-        // console.log(`Skipping article ${raw.article_id} - already exists.`);
         continue;
       }
       
@@ -63,8 +60,8 @@ export async function syncNewsJob() {
         continue;
       }
       
-      // 4. Summarize via AI (Placeholder for now)
-      const summary = fullContent.substring(0, 250).trim() + '...'; 
+      // 4. Use truncated summary (AI summary available on-demand via API)
+      const summary = fullContent.substring(0, 250).trim() + '...';
       
       // 5. Save to DB
       try {
@@ -72,7 +69,7 @@ export async function syncNewsJob() {
           data: {
             externalId: raw.article_id,
             title: raw.title,
-            originalContent: fullContent, // Now contains the scraped full text!
+            originalContent: fullContent,
             summary: summary,
             sourceUrl: raw.link,
             sourceName: raw.source_id,

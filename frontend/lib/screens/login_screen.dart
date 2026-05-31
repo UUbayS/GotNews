@@ -14,7 +14,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final _identifierController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
-  bool _rememberMe = false;
   bool _isLoading = false;
 
   void _login() async {
@@ -27,8 +26,9 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = false);
 
     if (!success) {
+      final error = context.read<AuthService>().lastError;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Login failed. Please check your credentials.')),
+        SnackBar(content: Text(error ?? 'Login failed. Please check your credentials.')),
       );
     }
   }
@@ -116,36 +116,19 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 8),
 
-              // Remember Me & Forgot Password
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      SizedBox(
-                        height: 24,
-                        width: 24,
-                        child: Checkbox(
-                          value: _rememberMe,
-                          onChanged: (val) {
-                            setState(() => _rememberMe = val ?? false);
-                          },
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      const Text('Remember me', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                    ],
-                  ),
-                  TextButton(
-                    onPressed: () {},
-                    child: const Text('Forgot Password ?', style: TextStyle(color: Colors.blue, fontSize: 12)),
-                  )
-                ],
+              // Forgot Password
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () {
+                    // TODO: Implement forgot password
+                  },
+                  child: const Text('Forgot Password?', style: TextStyle(color: Colors.blue, fontSize: 12)),
+                ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
 
               // Log In Button
               ElevatedButton(
@@ -175,34 +158,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: const Text("Sign Up", style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 12)),
                   ),
                 ],
-              ),
-              const SizedBox(height: 24),
-
-              // Divider
-              Row(
-                children: [
-                  Expanded(child: Divider(color: Colors.grey.shade300)),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Text('Or login with', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                  ),
-                  Expanded(child: Divider(color: Colors.grey.shade300)),
-                ],
-              ),
-              const SizedBox(height: 24),
-
-              // Google Button
-              OutlinedButton.icon(
-                onPressed: () {
-                  // TODO: Implement Google Sign In
-                },
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  side: BorderSide(color: Colors.grey.shade300),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-                icon: const Icon(Icons.g_mobiledata, color: Colors.red, size: 24), // Placeholder Google icon
-                label: const Text('Continue with Google', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w600)),
               ),
             ],
           ),
