@@ -4,6 +4,7 @@ import 'package:shimmer/shimmer.dart';
 import 'package:share_plus/share_plus.dart';
 import '../models/news_item.dart';
 import '../services/news_service.dart';
+import '../services/preferences_service.dart';
 
 class NewsDetailScreen extends StatefulWidget {
   final NewsItem item;
@@ -21,11 +22,20 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
   bool _isSummarizing = false;
   String? _aiSummary;
   bool _isAiCached = false;
+  double _fontSize = 16.0;
 
   @override
   void initState() {
     super.initState();
     _item = widget.item;
+    _loadFontSize();
+  }
+
+  Future<void> _loadFontSize() async {
+    final prefs = await PreferencesService.create();
+    if (mounted) {
+      setState(() => _fontSize = prefs.getFontSize());
+    }
   }
 
   void _toggleLike() async {
@@ -117,6 +127,91 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
     return '${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
   }
 
+  void _showFontSizeDialog() {
+    final theme = Theme.of(context);
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Font Size',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: theme.textTheme.titleLarge?.color ?? Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _fontSizeOption(14.0, 'S', theme),
+                _fontSizeOption(16.0, 'M', theme),
+                _fontSizeOption(20.0, 'L', theme),
+              ],
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _fontSizeOption(double size, String label, ThemeData theme) {
+    final isSelected = _fontSize == size;
+    return GestureDetector(
+      onTap: () async {
+        final prefs = await PreferencesService.create();
+        await prefs.setFontSize(size);
+        setState(() => _fontSize = size);
+        if (mounted) Navigator.pop(context);
+      },
+      child: Container(
+        width: 80,
+        height: 80,
+        decoration: BoxDecoration(
+          color: isSelected
+              ? theme.colorScheme.primary.withOpacity(0.1)
+              : Colors.grey.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? theme.colorScheme.primary : Colors.grey.shade300,
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: size * 0.75,
+                fontWeight: FontWeight.bold,
+                color: isSelected
+                    ? theme.colorScheme.primary
+                    : (theme.textTheme.bodyLarge?.color ?? Colors.black87),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '${size.round()}px',
+              style: TextStyle(
+                fontSize: 10,
+                color: isSelected
+                    ? theme.colorScheme.primary
+                    : Colors.grey.shade600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -127,6 +222,10 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
         elevation: 0,
         iconTheme: theme.appBarTheme.iconTheme ?? const IconThemeData(color: Colors.black87),
         actions: [
+          IconButton(
+            icon: Icon(Icons.text_fields, color: theme.iconTheme.color ?? Colors.black87),
+            onPressed: _showFontSizeDialog,
+          ),
           IconButton(
             icon: _isLiking
                 ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
@@ -266,7 +365,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                   Text(
                     _item.originalContent ?? _item.summary,
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: _fontSize,
                       color: theme.textTheme.bodyLarge?.color ?? Colors.black87,
                       height: 1.6,
                     ),
