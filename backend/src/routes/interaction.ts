@@ -171,3 +171,101 @@ export const interactionRoutes = new Elysia({ prefix: '/api' })
       return { message: 'Not liked or error' }
     }
   }, { requireAuth: true })
+
+  // READING HISTORY
+  .post('/reading-history', async ({ body, user, set }) => {
+    if (!user) {
+      set.status = 401
+      return { message: 'Unauthorized' }
+    }
+
+    const { articleId, readProgress } = body
+
+    const article = await prisma.article.findUnique({ where: { id: articleId } })
+    if (!article) {
+      set.status = 404
+      return { message: 'Article not found' }
+    }
+
+    try {
+      const history = await prisma.readingHistory.upsert({
+        where: {
+          userId_articleId: { userId: user.id, articleId }
+        },
+        update: {
+          readAt: new Date(),
+          readProgress: readProgress ?? 0,
+        },
+        create: {
+          userId: user.id,
+          articleId,
+          readProgress: readProgress ?? 0,
+        }
+      })
+      return { success: true, history }
+    } catch (e) {
+      console.error('[Interaction] ReadingHistory POST error:', e)
+      set.status = 400
+      return { message: 'Failed to record reading history' }
+    }
+  }, {
+    body: t.Object({
+      articleId: t.String(),
+      readProgress: t.Optional(t.Number()),
+    }),
+    requireAuth: true
+  })
+
+  .get('/reading-history', async ({ query, user, set }) => {
+    if (!user) {
+      set.status = 401
+      return { message: 'Unauthorized' }
+    }
+
+    const limit = Math.min(Number(query.limit) || 20, 50)
+
+    const history = await prisma.readingHistory.findMany({
+      where: { userId: user.id },
+      include: {
+        article: {
+          include: {
+            _count: { select: { likes: true } }
+          }
+        }
+      },
+      orderBy: { readAt: 'desc' },
+      take: limit,
+    })
+
+    const articleIds = history.map(h => h.articleId)
+    const userLikes = await prisma.like.findMany({
+      where: { userId: user.id, articleId: { in: articleIds } }
+    })
+    const userBookmarks = await prisma.bookmark.findMany({
+      where: { userId: user.id, articleId: { in: articleIds } }
+    })
+    const likedSet = new Set(userLikes.map(l => l.articleId))
+    const bookmarkedSet = new Set(userBookmarks.map(b => b.articleId))
+
+    return {
+      data: history.map(h => ({
+        id: h.article.id,
+        title: h.article.title,
+        summary: h.article.summary,
+        imageUrl: h.article.imageUrl,
+        sourceName: h.article.sourceName,
+        category: h.article.category,
+        publishedAt: h.article.publishedAt,
+        likesCount: h.article._count.likes,
+        isLiked: likedSet.has(h.article.id),
+        isBookmarked: bookmarkedSet.has(h.article.id),
+        readProgress: h.readProgress,
+        readAt: h.readAt,
+      })),
+    }
+  }, {
+    query: t.Object({
+      limit: t.Optional(t.String()),
+    }),
+    requireAuth: true
+  })
