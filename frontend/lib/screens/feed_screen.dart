@@ -147,18 +147,21 @@ class _FeedScreenState extends State<FeedScreen> {
               placeholder: (context, url) => Shimmer.fromColors(
                 baseColor: Colors.grey[900]!,
                 highlightColor: Colors.grey[800]!,
-                child: Container(color: Colors.black),
+                child: Container(color: Theme.of(context).scaffoldBackgroundColor),
               ),
               errorWidget: (context, url, error) => Container(
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [Color(0xFF2C3E50), Color(0xFF000000)],
+                    colors: [
+                      Theme.of(context).colorScheme.surface,
+                      Theme.of(context).scaffoldBackgroundColor,
+                    ],
                   ),
                 ),
-                child: const Center(
-                  child: Icon(Icons.image_not_supported, color: Colors.white24, size: 50),
+                child: Center(
+                  child: Icon(Icons.image_not_supported, color: Theme.of(context).textTheme.bodyLarge?.color?.withOpacity(0.24) ?? Colors.white24, size: 50),
                 ),
               ),
             ),
