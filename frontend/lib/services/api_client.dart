@@ -4,16 +4,15 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ApiClient {
-  static const String _baseUrlAndroid = 'http://10.0.2.2:3000/api';
-  static const String _baseUrlIOS = 'http://localhost:3000/api';
-  static const String _baseUrlProduction = 'https://api.gotnews.example.com/api';
+  static const String _developmentUrl = 'http://localhost:3000/api';
+  static const String _uploadsBaseUrl = 'http://localhost:3000';
 
-  static String get baseUrl {
-    // Konfigurasi per platform — ubah sesuai environment
-    // Di development emulator Android: 10.0.2.2
-    // Di iOS simulator / device: localhost atau IP mesin
-    // Di production: URL server sebenarnya
-    return _baseUrlAndroid;
+  static String get baseUrl => _developmentUrl;
+
+  static String getAvatarUrl(String? avatarUrl) {
+    if (avatarUrl == null || avatarUrl.isEmpty) return '';
+    if (avatarUrl.startsWith('http')) return avatarUrl;
+    return '$_uploadsBaseUrl$avatarUrl';
   }
 
   static const storage = FlutterSecureStorage();
@@ -105,6 +104,22 @@ class ApiClient {
     return _retryOnAuthFailure(() async {
       final headers = await _getHeaders();
       return await http.delete(Uri.parse('$baseUrl$endpoint'), headers: headers);
+    });
+  }
+
+  static Future<http.Response> postFile(String endpoint, String filePath, String fieldName) async {
+    return _retryOnAuthFailure(() async {
+      final token = await storage.read(key: 'accessToken');
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$baseUrl$endpoint'),
+      );
+      if (token != null) {
+        request.headers['Authorization'] = 'Bearer $token';
+      }
+      request.files.add(await http.MultipartFile.fromPath(fieldName, filePath));
+      final streamedResponse = await request.send();
+      return await http.Response.fromStream(streamedResponse);
     });
   }
 }

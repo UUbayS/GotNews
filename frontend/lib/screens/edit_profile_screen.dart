@@ -109,7 +109,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       : CircleAvatar(
                           radius: 40,
                           backgroundImage: (_avatarUrl != null && _avatarUrl!.isNotEmpty)
-                              ? NetworkImage(_avatarUrl!)
+                              ? NetworkImage(ApiClient.getAvatarUrl(_avatarUrl))
                               : const NetworkImage('https://via.placeholder.com/150'),
                           backgroundColor: Colors.grey.shade200,
                         ),

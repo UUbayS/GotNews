@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
+import '../services/api_client.dart';
 import 'edit_profile_screen.dart';
 import 'topics_screen.dart';
 import 'notifications_screen.dart';
@@ -59,8 +60,8 @@ class ProfileScreen extends StatelessWidget {
             Center(
               child: CircleAvatar(
                 radius: 40,
-                backgroundImage: (user?.avatarUrl != null)
-                    ? NetworkImage(user!.avatarUrl!)
+                backgroundImage: (user?.avatarUrl != null && user!.avatarUrl!.isNotEmpty)
+                    ? NetworkImage(ApiClient.getAvatarUrl(user.avatarUrl))
                     : const NetworkImage('https://via.placeholder.com/150'),
                 backgroundColor: Colors.grey.shade200,
               ),

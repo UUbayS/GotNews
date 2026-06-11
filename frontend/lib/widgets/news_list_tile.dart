@@ -80,6 +80,9 @@ class _NewsListTileState extends State<NewsListTile> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final textColor = theme.textTheme.bodyLarge?.color ?? Colors.black87;
+
     return InkWell(
       onTap: _navigateToDetail,
       child: Padding(
@@ -101,12 +104,12 @@ class _NewsListTileState extends State<NewsListTile> {
                           : "https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=300&q=80",
                       fit: BoxFit.cover,
                       placeholder: (context, url) => Shimmer.fromColors(
-                        baseColor: Colors.grey[300]!,
-                        highlightColor: Colors.grey[100]!,
-                        child: Container(color: Colors.white),
+                        baseColor: Colors.grey[400]!,
+                        highlightColor: Colors.grey[600]!,
+                        child: Container(color: theme.cardColor),
                       ),
                       errorWidget: (context, url, error) => Container(
-                        color: Colors.grey[200],
+                        color: theme.cardColor,
                         child: const Icon(Icons.image_not_supported, color: Colors.grey),
                       ),
                     ),
@@ -137,7 +140,7 @@ class _NewsListTileState extends State<NewsListTile> {
                   Text(
                     widget.item.category ?? 'General',
                     style: TextStyle(
-                      color: Colors.grey.shade600,
+                      color: Colors.grey.shade500,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
@@ -147,10 +150,10 @@ class _NewsListTileState extends State<NewsListTile> {
                     widget.item.title,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                      color: textColor,
                       height: 1.3,
                     ),
                   ),
@@ -159,29 +162,29 @@ class _NewsListTileState extends State<NewsListTile> {
                     children: [
                       Text(
                         widget.item.sourceName ?? 'Unknown Source',
-                        style: const TextStyle(
-                          color: Colors.black87,
+                        style: TextStyle(
+                          color: textColor,
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       const SizedBox(width: 8),
-                      Icon(Icons.access_time, size: 12, color: Colors.grey.shade600),
+                      Icon(Icons.access_time, size: 12, color: Colors.grey.shade500),
                       const SizedBox(width: 4),
                       Text(
                         _formatTime(widget.item.publishedAt),
-                        style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                        style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
                       ),
                     ],
                   ),
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      Icon(Icons.access_time, size: 12, color: Colors.grey.shade600),
+                      Icon(Icons.access_time, size: 12, color: Colors.grey.shade500),
                       const SizedBox(width: 4),
                       Text(
                         '${widget.item.readingTime} min read',
-                        style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                        style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
                       ),
                     ],
                   ),
