@@ -64,17 +64,20 @@ class BookmarkScreenState extends State<BookmarkScreen> {
     final isSearchActive = _searchController.text.trim().isNotEmpty;
     final displayItems = isSearchActive ? _filteredBookmarks : _bookmarks;
 
+    final theme = Theme.of(context);
+    final textColor = theme.textTheme.bodyLarge?.color ?? Colors.black87;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: theme.appBarTheme.backgroundColor ?? theme.scaffoldBackgroundColor,
         elevation: 0,
-        title: const Text(
+        title: Text(
           'Bookmark',
           style: TextStyle(
             fontSize: 28,
             fontWeight: FontWeight.bold,
-            color: Colors.black87,
+            color: textColor,
           ),
         ),
         centerTitle: false,
@@ -89,8 +92,12 @@ class BookmarkScreenState extends State<BookmarkScreen> {
                 child: TextField(
                   controller: _searchController,
                   onChanged: _filterBookmarks,
+                  style: TextStyle(color: textColor),
                   decoration: InputDecoration(
                     hintText: 'Search',
+                    hintStyle: TextStyle(color: Colors.grey),
+                    filled: true,
+                    fillColor: theme.cardColor,
                     prefixIcon: const Icon(Icons.search, color: Colors.grey),
                     suffixIcon: _searchController.text.isNotEmpty
                         ? IconButton(
@@ -103,11 +110,11 @@ class BookmarkScreenState extends State<BookmarkScreen> {
                         : null,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                      borderSide: BorderSide(color: theme.dividerColor),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                      borderSide: BorderSide(color: theme.dividerColor),
                     ),
                     contentPadding: const EdgeInsets.symmetric(vertical: 0),
                   ),

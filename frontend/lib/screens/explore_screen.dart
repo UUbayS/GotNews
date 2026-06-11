@@ -129,29 +129,32 @@ class _ExploreScreenState extends State<ExploreScreen> {
     NewsItem? trendingItem = _items.isNotEmpty ? _items.first : null;
     List<NewsItem> latestItems = _items.length > 1 ? _items.sublist(1) : [];
 
+    final theme = Theme.of(context);
+    final textColor = theme.textTheme.bodyLarge?.color ?? Colors.black87;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: theme.appBarTheme.backgroundColor ?? theme.scaffoldBackgroundColor,
         elevation: 0,
         title: Row(
           children: [
             Container(
               width: 30,
               height: 30,
-              decoration: const BoxDecoration(
-                color: Colors.blue,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary,
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.public, color: Colors.white, size: 18),
             ),
             const SizedBox(width: 8),
-            const Text(
+            Text(
               'GotNews',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF4A4A4A),
+                color: textColor,
               ),
             ),
           ],
@@ -170,8 +173,12 @@ class _ExploreScreenState extends State<ExploreScreen> {
                 TextField(
                   controller: _searchController,
                   onChanged: _onSearchChanged,
+                  style: TextStyle(color: textColor),
                   decoration: InputDecoration(
                     hintText: 'Search',
+                    hintStyle: TextStyle(color: Colors.grey),
+                    filled: true,
+                    fillColor: theme.cardColor,
                     prefixIcon: const Icon(Icons.search, color: Colors.grey),
                     suffixIcon: _searchQuery.isNotEmpty
                         ? IconButton(
@@ -181,11 +188,11 @@ class _ExploreScreenState extends State<ExploreScreen> {
                         : null,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                      borderSide: BorderSide(color: theme.dividerColor),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                      borderSide: BorderSide(color: theme.dividerColor),
                     ),
                     contentPadding: const EdgeInsets.symmetric(vertical: 0),
                   ),
@@ -194,9 +201,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
                 // ----- Search Mode -----
                 if (isSearchActive) ...[
                   const SizedBox(height: 24),
-                  const Text(
+                  Text(
                     'Search Results',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textColor),
                   ),
                   const SizedBox(height: 16),
                   // Categories in search mode
@@ -221,11 +228,11 @@ class _ExploreScreenState extends State<ExploreScreen> {
                                 ),
                               ),
                             ),
-                            child: Text(
+                              child: Text(
                               category,
                               style: TextStyle(
                                 fontSize: 16,
-                                color: isSelected ? Colors.black87 : Colors.grey,
+                                color: isSelected ? textColor : Colors.grey,
                                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                               ),
                             ),
@@ -238,8 +245,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
                   if (_isSearching)
                     _buildShimmerList()
                   else if (_searchResults.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.only(top: 40),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 40),
                       child: Center(
                         child: Text(
                           'No results found',
@@ -264,9 +271,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
+                      Text(
                         'Trending News',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textColor),
                       ),
                       TextButton(
                         onPressed: () {},
@@ -283,9 +290,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
                   const SizedBox(height: 24),
 
                   // Latest Section
-                  const Text(
+                  Text(
                     'Latest',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textColor),
                   ),
                   const SizedBox(height: 16),
 
@@ -306,7 +313,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                             decoration: BoxDecoration(
                               border: Border(
                                 bottom: BorderSide(
-                                  color: isSelected ? Colors.blue : Colors.transparent,
+                                  color: isSelected ? theme.colorScheme.primary : Colors.transparent,
                                   width: 2,
                                 ),
                               ),
@@ -315,7 +322,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                               category,
                               style: TextStyle(
                                 fontSize: 16,
-                                color: isSelected ? Colors.black87 : Colors.grey,
+                                color: isSelected ? textColor : Colors.grey,
                                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                               ),
                             ),
@@ -410,6 +417,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
   }
 
   Widget _buildTrendingCard(BuildContext context, NewsItem item) {
+    final theme = Theme.of(context);
+    final textColor = theme.textTheme.bodyLarge?.color ?? Colors.black87;
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -453,7 +462,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
           const SizedBox(height: 4),
           Text(
             item.title,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, height: 1.3),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, height: 1.3, color: textColor),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
@@ -462,7 +471,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
             children: [
               Text(
                 item.sourceName ?? 'Unknown Source',
-                style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 12),
+                style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 12),
               ),
               const SizedBox(width: 12),
               Icon(Icons.access_time, size: 14, color: Colors.grey.shade600),

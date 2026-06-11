@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:provider/provider.dart';
+import '../services/auth_service.dart';
 import 'feed_screen.dart';
 import 'explore_screen.dart';
 import 'bookmark_screen.dart';
 import 'profile_screen.dart';
+import 'admin_dashboard_screen.dart';
+import 'admin_users_screen.dart';
+import 'admin_articles_screen.dart';
+import 'admin_sources_screen.dart';
+import 'admin_settings_screen.dart';
 
 class MainLayout extends StatefulWidget {
   const MainLayout({super.key});
@@ -15,24 +22,97 @@ class MainLayout extends StatefulWidget {
 class _MainLayoutState extends State<MainLayout> {
   int _currentIndex = 0;
   final GlobalKey<BookmarkScreenState> _bookmarkKey = GlobalKey<BookmarkScreenState>();
-  
-  late final List<Widget> _screens;
 
   @override
-  void initState() {
-    super.initState();
-    _screens = [
+  Widget build(BuildContext context) {
+    final auth = context.watch<AuthService>();
+    final isAdmin = auth.isAdmin;
+
+    if (isAdmin) {
+      return _buildAdminLayout();
+    }
+    return _buildUserLayout();
+  }
+
+  Widget _buildAdminLayout() {
+    final adminScreens = [
+      AdminDashboardScreen(
+        onNavigateTab: (index) => setState(() => _currentIndex = index),
+      ),
+      const AdminUsersScreen(),
+      const AdminArticlesScreen(),
+      const AdminSourcesScreen(),
+      const AdminSettingsScreen(),
+    ];
+
+    if (_currentIndex >= adminScreens.length) {
+      _currentIndex = adminScreens.length - 1;
+    }
+
+    return Scaffold(
+      body: IndexedStack(
+        index: _currentIndex,
+        children: adminScreens,
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        onTap: (index) => setState(() => _currentIndex = index),
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: Theme.of(context).bottomNavigationBarTheme.backgroundColor ?? Theme.of(context).scaffoldBackgroundColor,
+        selectedItemColor: Theme.of(context).colorScheme.primary,
+        unselectedItemColor: Colors.grey,
+        showUnselectedLabels: true,
+        selectedLabelStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
+        unselectedLabelStyle: const TextStyle(fontSize: 10),
+        elevation: 8,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.dashboard_outlined),
+            activeIcon: Icon(Icons.dashboard),
+            label: 'Dashboard',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.people_outline),
+            activeIcon: Icon(Icons.people),
+            label: 'Users',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.article_outlined),
+            activeIcon: Icon(Icons.article),
+            label: 'Artikel',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.rss_feed_outlined),
+            activeIcon: Icon(Icons.rss_feed),
+            label: 'Sumber',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings_outlined),
+            activeIcon: Icon(Icons.settings),
+            label: 'Pengaturan',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUserLayout() {
+    final userScreens = [
       const FeedScreen(),
       const ExploreScreen(),
       BookmarkScreen(key: _bookmarkKey),
       const ProfileScreen(),
     ];
-  }
 
-  @override
-  Widget build(BuildContext context) {
+    if (_currentIndex >= userScreens.length) {
+      _currentIndex = userScreens.length - 1;
+    }
+
     return Scaffold(
-      body: _screens[_currentIndex],
+      body: IndexedStack(
+        index: _currentIndex,
+        children: userScreens,
+      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) {
@@ -42,8 +122,8 @@ class _MainLayoutState extends State<MainLayout> {
           setState(() => _currentIndex = index);
         },
         type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.white,
-        selectedItemColor: Colors.blue,
+        backgroundColor: Theme.of(context).bottomNavigationBarTheme.backgroundColor ?? Theme.of(context).scaffoldBackgroundColor,
+        selectedItemColor: Theme.of(context).colorScheme.primary,
         unselectedItemColor: Colors.grey,
         showUnselectedLabels: true,
         items: const [

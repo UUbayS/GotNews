@@ -2,6 +2,9 @@ import { Elysia, t } from 'elysia'
 import { prisma } from '../lib/prisma'
 import { password } from '../lib/password'
 import { authPlugin } from '../middleware/auth'
+import { mkdir } from 'fs/promises'
+import { existsSync } from 'fs'
+import { join } from 'path'
 
 export const authRoutes = new Elysia({ prefix: '/api/auth' })
   .use(authPlugin)
@@ -80,7 +83,8 @@ export const authRoutes = new Elysia({ prefix: '/api/auth' })
         avatarUrl: user.avatarUrl,
         dateOfBirth: user.dateOfBirth,
         gender: user.gender,
-        address: user.address
+        address: user.address,
+        role: user.role
       },
       accessToken,
       refreshToken
@@ -179,7 +183,7 @@ export const authRoutes = new Elysia({ prefix: '/api/auth' })
       return { message: 'Unauthorized' }
     }
 
-    const { name, username, email, dateOfBirth, gender, address } = body
+    const { name, username, email, dateOfBirth, gender, address, avatarUrl } = body
 
     if (email) {
       const existingEmail = await prisma.user.findUnique({ where: { email } })
@@ -199,7 +203,7 @@ export const authRoutes = new Elysia({ prefix: '/api/auth' })
 
     const updatedUser = await prisma.user.update({
       where: { id: user.id },
-      data: { name, username, email, dateOfBirth, gender, address },
+      data: { name, username, email, dateOfBirth, gender, address, avatarUrl },
       select: {
         id: true,
         name: true,
@@ -221,6 +225,158 @@ export const authRoutes = new Elysia({ prefix: '/api/auth' })
       dateOfBirth: t.Optional(t.String()),
       gender: t.Optional(t.String()),
       address: t.Optional(t.String()),
+      avatarUrl: t.Optional(t.String()),
     }),
     requireAuth: true
   })
+
+  // UPLOAD AVATAR (Protected)
+  .post('/avatar', async ({ body, user, set }) => {
+    if (!user) {
+      set.status = 401
+      return { message: 'Unauthorized' }
+    }
+
+    const { file } = body as { file: File }
+    if (!file) {
+      set.status = 400
+      return { message: 'No file provided' }
+    }
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/jpg']
+    const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif']
+    const ext = file.name.split('.').pop()?.toLowerCase() || ''
+    
+    if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(ext)) {
+      set.status = 400
+      return { message: 'Invalid file type. Allowed: JPEG, PNG, WebP, GIF (or .jpg, .jpeg, .png, .webp, .gif)' }
+    }
+
+    const maxSize = 5 * 1024 * 1024 // 5MB
+    if (file.size > maxSize) {
+      set.status = 400
+      return { message: 'File too large. Max size: 5MB' }
+    }
+
+    const uploadDir = join(process.cwd(), 'uploads', 'avatars')
+    if (!existsSync(uploadDir)) {
+      await mkdir(uploadDir, { recursive: true })
+    }
+
+    const safeExt = allowedExtensions.includes(ext) ? ext : 'jpg'
+    const filename = `${user.id}-${Date.now()}.${safeExt}`
+    const filepath = join(uploadDir, filename)
+
+    const buffer = Buffer.from(await file.arrayBuffer())
+    await Bun.write(filepath, buffer)
+
+    const avatarUrl = `/uploads/avatars/${filename}`
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { avatarUrl }
+    })
+
+    return { success: true, avatarUrl }
+  }, { requireAuth: true })
+
+  // GET PREFERENCES (Protected)
+  .get('/preferences', async ({ user, set }) => {
+    if (!user) {
+      set.status = 401
+      return { message: 'Unauthorized' }
+    }
+
+    const userData = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { preferences: true }
+    })
+
+    const preferences = JSON.parse(userData?.preferences || '[]')
+    return { preferences }
+  }, { requireAuth: true })
+
+  // UPDATE PREFERENCES (Protected)
+  .put('/preferences', async ({ body, user, set }) => {
+    if (!user) {
+      set.status = 401
+      return { message: 'Unauthorized' }
+    }
+
+    const { preferences } = body
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { preferences: JSON.stringify(preferences) }
+    })
+
+    return { success: true, preferences }
+  }, {
+    body: t.Object({
+      preferences: t.Array(t.String())
+    }),
+    requireAuth: true
+  })
+
+  // GET NOTIFICATIONS (Protected)
+  .get('/notifications', async ({ user, query, set }) => {
+    if (!user) {
+      set.status = 401
+      return { message: 'Unauthorized' }
+    }
+
+    const page = parseInt(query.page || '1')
+    const limit = parseInt(query.limit || '20')
+    const skip = (page - 1) * limit
+
+    const [notifications, unreadCount] = await Promise.all([
+      prisma.notification.findMany({
+        where: { userId: user.id },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      prisma.notification.count({
+        where: { userId: user.id, isRead: false }
+      })
+    ])
+
+    return { notifications, unreadCount }
+  }, {
+    requireAuth: true
+  })
+
+  // MARK NOTIFICATION AS READ (Protected)
+  .put('/notifications/:id/read', async ({ params, user, set }) => {
+    if (!user) {
+      set.status = 401
+      return { message: 'Unauthorized' }
+    }
+
+    const notification = await prisma.notification.findUnique({ where: { id: params.id } })
+    if (!notification || notification.userId !== user.id) {
+      set.status = 404
+      return { message: 'Notification not found' }
+    }
+
+    await prisma.notification.update({
+      where: { id: params.id },
+      data: { isRead: true }
+    })
+
+    return { success: true }
+  }, { requireAuth: true })
+
+  // MARK ALL NOTIFICATIONS AS READ (Protected)
+  .put('/notifications/read-all', async ({ user, set }) => {
+    if (!user) {
+      set.status = 401
+      return { message: 'Unauthorized' }
+    }
+
+    await prisma.notification.updateMany({
+      where: { userId: user.id, isRead: false },
+      data: { isRead: true }
+    })
+
+    return { success: true }
+  }, { requireAuth: true })

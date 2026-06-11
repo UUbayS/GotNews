@@ -85,19 +85,22 @@ class _TopicsScreenState extends State<TopicsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final textColor = theme.textTheme.bodyLarge?.color ?? Colors.black87;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: theme.appBarTheme.backgroundColor ?? theme.scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.blue),
+          icon: Icon(Icons.arrow_back, color: theme.colorScheme.primary),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Topics',
           style: TextStyle(
-            color: Colors.black87,
+            color: textColor,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -145,13 +148,13 @@ class _TopicsScreenState extends State<TopicsScreen> {
                             ),
                             decoration: BoxDecoration(
                               color: isSelected
-                                  ? const Color(0xFF2E65F3)
-                                  : Colors.grey.shade100,
+                                  ? theme.colorScheme.primary
+                                  : theme.cardColor,
                               borderRadius: BorderRadius.circular(24),
                               border: Border.all(
                                 color: isSelected
-                                    ? const Color(0xFF2E65F3)
-                                    : Colors.grey.shade300,
+                                    ? theme.colorScheme.primary
+                                    : theme.dividerColor,
                               ),
                             ),
                             child: Row(
@@ -170,7 +173,7 @@ class _TopicsScreenState extends State<TopicsScreen> {
                                   style: TextStyle(
                                     color: isSelected
                                         ? Colors.white
-                                        : Colors.grey.shade800,
+                                        : textColor,
                                     fontWeight: FontWeight.w600,
                                     fontSize: 16,
                                   ),
@@ -187,7 +190,7 @@ class _TopicsScreenState extends State<TopicsScreen> {
                     onPressed:
                         _isSaving || _selectedCategories.isEmpty ? null : _savePreferences,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2E65F3),
+                      backgroundColor: theme.colorScheme.primary,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
