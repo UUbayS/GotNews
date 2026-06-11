@@ -16,14 +16,17 @@ model User {
   password     String                        // Hashed via Bun.password
   role         String     @default("user")   // "user" | "admin"
   avatarUrl    String?
+  preferences  String     @default("[]")     // JSON array of category names
   dateOfBirth  String?
   gender       String?
   address      String?
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
-  bookmarks    Bookmark[]
-  likes        Like[]
+  bookmarks        Bookmark[]
+  likes            Like[]
+  notifications    Notification[]
+  readingHistory   ReadingHistory[]
 }
 
 model Article {
@@ -32,6 +35,8 @@ model Article {
   title           String
   originalContent String?
   summary         String
+  aiSummary       String?
+  aiSummaryAt     DateTime?
   sourceUrl       String?
   sourceName      String?
   imageUrl        String?
@@ -44,6 +49,7 @@ model Article {
 
   bookmarks       Bookmark[]
   likes           Like[]
+  readingHistory  ReadingHistory[]
 
   @@index([createdAt(sort: Desc), id(sort: Desc)])
   @@index([category])
@@ -82,3 +88,42 @@ model InvalidatedToken {
 
   @@index([expiresAt])
 }
+
+model NewsSource {
+  id            String    @id @default(cuid())
+  name          String
+  sourceId      String    @unique
+  language      String
+  isActive      Boolean   @default(true)
+  lastFetchedAt DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  title     String
+  message   String
+  type      String   @default("info")   // "info" | "like" | "bookmark" | "system"
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([userId, isRead])
+}
+
+model ReadingHistory {
+  id           String   @id @default(cuid())
+  userId       String
+  articleId    String
+  readAt       DateTime @default(now())
+  readProgress Float    @default(0)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  article      Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, articleId])
+  @@index([userId, readAt(sort: Desc)])
+}
+

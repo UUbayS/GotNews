@@ -1,0 +1,2 @@
+ALTER TABLE "Article" ADD COLUMN "aiSummary" TEXT;
+ALTER TABLE "Article" ADD COLUMN "aiSummaryAt" TIMESTAMP(3);
