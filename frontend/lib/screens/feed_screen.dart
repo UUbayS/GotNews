@@ -130,7 +130,6 @@ class _FeedScreenState extends State<FeedScreen> {
             builder: (context) => NewsDetailScreen(item: item),
           ),
         ).then((_) {
-          // Refresh state when coming back in case bookmark changed
           setState(() {});
         });
       },
@@ -166,6 +165,21 @@ class _FeedScreenState extends State<FeedScreen> {
               ),
             ),
           ),
+
+          // Read badge
+          if (item.isRead)
+            Positioned(
+              top: 12,
+              right: 12,
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: const BoxDecoration(
+                  color: Colors.green,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.check, size: 14, color: Colors.white),
+              ),
+            ),
           
           // Dark Overlay for readability
           Container(

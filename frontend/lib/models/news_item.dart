@@ -14,6 +14,7 @@ class NewsItem {
   int bookmarksCount;
   bool isLiked;
   bool isBookmarked;
+  bool isRead;
 
   NewsItem({
     required this.id,
@@ -30,6 +31,7 @@ class NewsItem {
     this.bookmarksCount = 0,
     this.isLiked = false,
     this.isBookmarked = false,
+    this.isRead = false,
   });
 
   factory NewsItem.fromJson(Map<String, dynamic> json) {
@@ -50,6 +52,7 @@ class NewsItem {
       bookmarksCount: json['bookmarksCount'] ?? 0,
       isLiked: json['isLiked'] ?? false,
       isBookmarked: json['isBookmarked'] ?? false,
+      isRead: json['isRead'] ?? false,
     );
   }
 

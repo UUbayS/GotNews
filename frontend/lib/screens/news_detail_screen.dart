@@ -28,7 +28,9 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
   void initState() {
     super.initState();
     _item = widget.item;
+    _item.isRead = true;
     _loadFontSize();
+    NewsService.recordReadingHistory(_item.id);
   }
 
   Future<void> _loadFontSize() async {

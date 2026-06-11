@@ -8,8 +8,9 @@ import '../screens/news_detail_screen.dart';
 class NewsListTile extends StatefulWidget {
   final NewsItem item;
   final VoidCallback? onTap;
+  final bool isRead;
 
-  const NewsListTile({super.key, required this.item, this.onTap});
+  const NewsListTile({super.key, required this.item, this.onTap, this.isRead = false});
 
   @override
   State<NewsListTile> createState() => _NewsListTileState();
@@ -87,27 +88,44 @@ class _NewsListTileState extends State<NewsListTile> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Thumbnail
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: SizedBox(
-                width: 90,
-                height: 90,
-                child: CachedNetworkImage(
-                  imageUrl: (widget.item.imageUrl != null && widget.item.imageUrl!.isNotEmpty)
-                      ? widget.item.imageUrl!
-                      : "https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=300&q=80",
-                  fit: BoxFit.cover,
-                  placeholder: (context, url) => Shimmer.fromColors(
-                    baseColor: Colors.grey[300]!,
-                    highlightColor: Colors.grey[100]!,
-                    child: Container(color: Colors.white),
-                  ),
-                  errorWidget: (context, url, error) => Container(
-                    color: Colors.grey[200],
-                    child: const Icon(Icons.image_not_supported, color: Colors.grey),
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: SizedBox(
+                    width: 90,
+                    height: 90,
+                    child: CachedNetworkImage(
+                      imageUrl: (widget.item.imageUrl != null && widget.item.imageUrl!.isNotEmpty)
+                          ? widget.item.imageUrl!
+                          : "https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=300&q=80",
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => Shimmer.fromColors(
+                        baseColor: Colors.grey[300]!,
+                        highlightColor: Colors.grey[100]!,
+                        child: Container(color: Colors.white),
+                      ),
+                      errorWidget: (context, url, error) => Container(
+                        color: Colors.grey[200],
+                        child: const Icon(Icons.image_not_supported, color: Colors.grey),
+                      ),
+                    ),
                   ),
                 ),
-              ),
+                if (widget.isRead)
+                  Positioned(
+                    top: 4,
+                    right: 4,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(
+                        color: Colors.green,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.check, size: 12, color: Colors.white),
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(width: 16),
             
