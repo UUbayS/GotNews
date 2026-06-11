@@ -131,11 +131,19 @@ class NewsService {
     throw Exception('Failed to fetch bookmarks');
   }
 
-  static Future<String> summarizeArticle(String articleId) async {
-    final response = await ApiClient.post('/articles/$articleId/summarize');
+  static Future<Map<String, dynamic>> summarizeArticle(
+    String articleId, {
+    bool force = false,
+  }) async {
+    final query = force ? '?force=true' : '';
+    final response = await ApiClient.post('/articles/$articleId/summarize$query');
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
-      return data['summary'] as String? ?? 'Summary unavailable';
+      return {
+        'summary': data['summary'] as String,
+        'cached': data['cached'] as bool? ?? false,
+        'regenerated': data['regenerated'] as bool? ?? false,
+      };
     }
     if (response.statusCode == 401) {
       throw Exception('Please login to use AI features');
@@ -144,5 +152,35 @@ class NewsService {
       throw Exception('Article not found');
     }
     throw Exception('Failed to generate summary (status ${response.statusCode})');
+  }
+
+  static Future<void> recordReadingHistory(String articleId, {double readProgress = 0}) async {
+    final response = await ApiClient.post(
+      '/reading-history',
+      body: {'articleId': articleId, 'readProgress': readProgress},
+    );
+
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      developer.log(
+        'recordReadingHistory failed: ${response.statusCode} ${response.body}',
+        name: 'NewsService',
+      );
+    }
+  }
+
+  static Future<List<NewsItem>> getReadingHistory({int limit = 20}) async {
+    final response = await ApiClient.get('/reading-history?limit=$limit');
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body) as Map<String, dynamic>?;
+      if (data == null) {
+        throw Exception('Invalid response: data is null');
+      }
+      final itemsData = data['data'] as List?;
+      if (itemsData == null) {
+        throw Exception('Invalid response: data field is missing');
+      }
+      return itemsData.map((i) => NewsItem.fromJson(i)).toList();
+    }
+    throw Exception('Failed to fetch reading history (status ${response.statusCode})');
   }
 }
