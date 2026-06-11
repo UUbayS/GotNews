@@ -6,8 +6,38 @@ import 'edit_profile_screen.dart';
 import 'topics_screen.dart';
 import 'notifications_screen.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  void _showFullPhoto(String? avatarUrl) {
+    if (avatarUrl == null || avatarUrl.isEmpty) return;
+    final fullUrl = ApiClient.getAvatarUrl(avatarUrl);
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: GestureDetector(
+          onTap: () => Navigator.pop(context),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.network(
+              fullUrl,
+              fit: BoxFit.contain,
+              errorBuilder: (context, url, error) => Container(
+                color: Colors.grey.shade800,
+                child: const Icon(Icons.error, color: Colors.white, size: 48),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -58,12 +88,15 @@ class ProfileScreen extends StatelessWidget {
           children: [
             // Avatar
             Center(
-              child: CircleAvatar(
-                radius: 40,
-                backgroundImage: (user?.avatarUrl != null && user!.avatarUrl!.isNotEmpty)
-                    ? NetworkImage(ApiClient.getAvatarUrl(user.avatarUrl))
-                    : const NetworkImage('https://via.placeholder.com/150'),
-                backgroundColor: Colors.grey.shade200,
+              child: GestureDetector(
+                onTap: () => _showFullPhoto(user?.avatarUrl),
+                child: CircleAvatar(
+                  radius: 40,
+                  backgroundImage: (user?.avatarUrl != null && user!.avatarUrl!.isNotEmpty)
+                      ? NetworkImage(ApiClient.getAvatarUrl(user.avatarUrl))
+                      : const NetworkImage('https://via.placeholder.com/150'),
+                  backgroundColor: Colors.grey.shade200,
+                ),
               ),
             ),
             const SizedBox(height: 16),
