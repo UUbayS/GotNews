@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:share_plus/share_plus.dart';
 import '../models/news_item.dart';
 import '../services/news_service.dart';
 
@@ -19,6 +20,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
   bool _isLiking = false;
   bool _isSummarizing = false;
   String? _aiSummary;
+  bool _isAiCached = false;
 
   @override
   void initState() {
@@ -66,15 +68,22 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
     }
   }
 
-  void _generateSummary() async {
+  void _generateSummary({bool force = false}) async {
     if (_isSummarizing) return;
     setState(() => _isSummarizing = true);
     try {
-      final summary = await NewsService.summarizeArticle(_item.id);
+      final result = await NewsService.summarizeArticle(_item.id, force: force);
       if (mounted) {
-        setState(() => _aiSummary = summary);
+        setState(() {
+          _aiSummary = result['summary'] as String;
+          _isAiCached = result['cached'] as bool;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('AI Summary generated!')),
+          SnackBar(content: Text(
+            force
+              ? 'AI Summary regenerated!'
+              : (_isAiCached ? 'Loaded cached AI summary' : 'AI Summary generated!'),
+          )),
         );
       }
     } catch (e) {
@@ -88,6 +97,21 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
     }
   }
 
+  void _shareArticle() async {
+    if (_item.sourceUrl == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No source URL to share')),
+      );
+      return;
+    }
+    final source = _item.sourceName ?? 'Unknown';
+    final category = _item.category != null ? ' • ${_item.category}' : '';
+    await Share.share(
+      '${_item.title}\n\nvia $source$category\n\n${_item.sourceUrl}',
+      subject: _item.title,
+    );
+  }
+
   String _formatDate(DateTime? date) {
     if (date == null) return 'Unknown Date';
     return '${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
@@ -95,19 +119,20 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: theme.appBarTheme.backgroundColor ?? theme.scaffoldBackgroundColor,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black87),
+        iconTheme: theme.appBarTheme.iconTheme ?? const IconThemeData(color: Colors.black87),
         actions: [
           IconButton(
             icon: _isLiking
                 ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
                 : Icon(
                     _item.isLiked ? Icons.favorite : Icons.favorite_border,
-                    color: _item.isLiked ? Colors.red : Colors.black87,
+                    color: _item.isLiked ? Colors.red : theme.iconTheme.color ?? Colors.black87,
                   ),
             onPressed: _isLiking ? null : _toggleLike,
           ),
@@ -116,15 +141,13 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                 ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
                 : Icon(
                     _item.isBookmarked ? Icons.bookmark : Icons.bookmark_border,
-                    color: _item.isBookmarked ? Colors.blue : Colors.black87,
+                    color: _item.isBookmarked ? Colors.blue : theme.iconTheme.color ?? Colors.black87,
                   ),
             onPressed: _isBookmarking ? null : _toggleBookmark,
           ),
           IconButton(
-            icon: const Icon(Icons.share, color: Colors.black87),
-            onPressed: () {
-              // Share functionality here
-            },
+            icon: Icon(Icons.share, color: theme.iconTheme.color ?? Colors.black87),
+            onPressed: _shareArticle,
           ),
         ],
       ),
@@ -142,7 +165,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                 placeholder: (context, url) => Shimmer.fromColors(
                   baseColor: Colors.grey[300]!,
                   highlightColor: Colors.grey[100]!,
-                  child: Container(color: Colors.white, height: 250),
+                  child: Container(color: theme.scaffoldBackgroundColor, height: 250),
                 ),
                 errorWidget: (context, url, error) => Container(
                   height: 250,
@@ -178,10 +201,10 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                   // Title
                   Text(
                     _item.title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                      color: theme.textTheme.titleLarge?.color ?? Colors.black87,
                       height: 1.3,
                     ),
                   ),
@@ -196,7 +219,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                           color: Colors.grey.shade100,
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.public, size: 20, color: Colors.blue),
+                        child: Icon(Icons.public, size: 20, color: theme.colorScheme.primary),
                       ),
                       const SizedBox(width: 12),
                       Column(
@@ -204,10 +227,10 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                         children: [
                           Text(
                             _item.sourceName ?? 'Unknown Source',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
-                              color: Colors.black87,
+                              color: theme.textTheme.bodyMedium?.color ?? Colors.black87,
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -215,7 +238,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                             _formatDate(_item.publishedAt),
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey.shade600,
+                              color: theme.textTheme.bodySmall?.color ?? Colors.grey.shade600,
                             ),
                           ),
                         ],
@@ -225,15 +248,15 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                   const SizedBox(height: 24),
                   
                   // Divider
-                  Divider(color: Colors.grey.shade200, thickness: 1),
+                  Divider(color: theme.dividerColor, thickness: 1),
                   const SizedBox(height: 20),
 
                   // Content
                   Text(
                     _item.originalContent ?? _item.summary,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
-                      color: Colors.black87,
+                      color: theme.textTheme.bodyLarge?.color ?? Colors.black87,
                       height: 1.6,
                     ),
                   ),
@@ -254,26 +277,46 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Row(
+                            Row(
                               children: [
-                                Icon(Icons.auto_awesome, size: 18, color: Colors.blue),
-                                SizedBox(width: 8),
+                                Icon(Icons.auto_awesome, size: 18, color: theme.colorScheme.primary),
+                                const SizedBox(width: 8),
                                 Text(
                                   'AI Summary',
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.blue,
+                                    color: theme.colorScheme.primary,
                                     fontSize: 14,
                                   ),
+                                ),
+                                const Spacer(),
+                                if (_isAiCached)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: Colors.green.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: const Text(
+                                      'cached',
+                                      style: TextStyle(fontSize: 10, color: Colors.green, fontWeight: FontWeight.w600),
+                                    ),
+                                  ),
+                                IconButton(
+                                  icon: Icon(Icons.refresh, size: 18, color: theme.colorScheme.primary),
+                                  tooltip: 'Regenerate',
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                  onPressed: _isSummarizing ? null : () => _generateSummary(force: true),
                                 ),
                               ],
                             ),
                             const SizedBox(height: 8),
                             Text(
                               _aiSummary!,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 15,
-                                color: Colors.black87,
+                                color: theme.textTheme.bodyMedium?.color ?? Colors.black87,
                                 height: 1.5,
                               ),
                             ),
@@ -282,26 +325,27 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                       ),
                     ),
 
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      onPressed: _isSummarizing ? null : _generateSummary,
-                      icon: _isSummarizing
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.auto_awesome, size: 18),
-                      label: Text(_isSummarizing ? 'Generating...' : 'Generate AI Summary'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.blue,
-                        side: const BorderSide(color: Colors.blue),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  if (_aiSummary == null)
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: _isSummarizing ? null : () => _generateSummary(),
+                        icon: _isSummarizing
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.auto_awesome, size: 18),
+                        label: Text(_isSummarizing ? 'Generating...' : 'Generate AI Summary'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: theme.colorScheme.primary,
+                          side: BorderSide(color: theme.colorScheme.primary),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
                       ),
                     ),
-                  ),
                   const SizedBox(height: 30),
                 ],
               ),
