@@ -57,12 +57,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final textColor = theme.textTheme.bodyLarge?.color ?? Colors.black87;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: theme.appBarTheme.backgroundColor ?? theme.scaffoldBackgroundColor,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black),
+        iconTheme: IconThemeData(color: textColor),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -77,19 +80,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   Container(
                     width: 50,
                     height: 50,
-                    decoration: const BoxDecoration(
-                      color: Colors.blue,
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary,
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(Icons.public, color: Colors.white, size: 30),
                   ),
                   const SizedBox(width: 10),
-                  const Text(
+                  Text(
                     'GotNews',
                     style: TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF4A4A4A),
+                      color: textColor,
                     ),
                   ),
                 ],
@@ -99,14 +102,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
               // Username Field
               TextFormField(
                 controller: _usernameController,
-                decoration: _inputDecoration('Username'),
+                style: TextStyle(color: textColor),
+                decoration: _inputDecoration('Username', theme),
               ),
               const SizedBox(height: 16),
 
               // Email Field
               TextFormField(
                 controller: _emailController,
-                decoration: _inputDecoration('Email'),
+                style: TextStyle(color: textColor),
+                decoration: _inputDecoration('Email', theme),
                 keyboardType: TextInputType.emailAddress,
               ),
               const SizedBox(height: 16),
@@ -114,8 +119,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
               // Date of Birth Field
               TextFormField(
                 controller: _dobController,
-                decoration: _inputDecoration('Date of Birth').copyWith(
-                  suffixIcon: const Icon(Icons.calendar_today, color: Colors.grey),
+                style: TextStyle(color: textColor),
+                decoration: _inputDecoration('Date of Birth', theme).copyWith(
+                  suffixIcon: Icon(Icons.calendar_today, color: Colors.grey),
                 ),
                 readOnly: true,
                 onTap: () async {
@@ -138,7 +144,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
               TextFormField(
                 controller: _passwordController,
                 obscureText: _obscurePassword,
-                decoration: _inputDecoration('Password').copyWith(
+                style: TextStyle(color: textColor),
+                decoration: _inputDecoration('Password', theme).copyWith(
                   suffixIcon: IconButton(
                     icon: Icon(
                       _obscurePassword ? Icons.visibility_off : Icons.visibility,
@@ -158,7 +165,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
               TextFormField(
                 controller: _confirmPasswordController,
                 obscureText: _obscureConfirmPassword,
-                decoration: _inputDecoration('Confirm Password').copyWith(
+                style: TextStyle(color: textColor),
+                decoration: _inputDecoration('Confirm Password', theme).copyWith(
                   suffixIcon: IconButton(
                     icon: Icon(
                       _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
@@ -178,7 +186,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               ElevatedButton(
                 onPressed: _isLoading ? null : _signup,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2E65F3),
+                  backgroundColor: theme.colorScheme.primary,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -195,16 +203,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 
-  InputDecoration _inputDecoration(String hint) {
+  InputDecoration _inputDecoration(String hint, ThemeData theme) {
     return InputDecoration(
       hintText: hint,
+      hintStyle: TextStyle(color: Colors.grey),
+      filled: true,
+      fillColor: theme.cardColor,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8.0),
-        borderSide: BorderSide(color: Colors.grey.shade300),
+        borderSide: BorderSide(color: theme.dividerColor),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8.0),
-        borderSide: BorderSide(color: Colors.grey.shade300),
+        borderSide: BorderSide(color: theme.dividerColor),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
     );

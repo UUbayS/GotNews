@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import 'edit_profile_screen.dart';
+import 'topics_screen.dart';
+import 'notifications_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -9,38 +11,42 @@ class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = context.watch<AuthService>().currentUser;
+    final theme = Theme.of(context);
+    final textColor = theme.textTheme.bodyLarge?.color ?? Colors.black87;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: theme.appBarTheme.backgroundColor ?? theme.scaffoldBackgroundColor,
         elevation: 0,
         title: Row(
           children: [
             Container(
               width: 30,
               height: 30,
-              decoration: const BoxDecoration(
-                color: Colors.blue,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary,
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.public, color: Colors.white, size: 18),
             ),
             const SizedBox(width: 8),
-            const Text(
+            Text(
               'GotNews',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF4A4A4A),
+                color: textColor,
               ),
             ),
           ],
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.notifications_none, color: Colors.black87),
-            onPressed: () {},
+            icon: Icon(Icons.notifications_none, color: textColor),
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen()));
+            },
           ),
         ],
       ),
@@ -65,7 +71,7 @@ class ProfileScreen extends StatelessWidget {
             Center(
               child: Text(
                 user?.name ?? 'Unknown',
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: textColor),
               ),
             ),
             const SizedBox(height: 4),
@@ -79,18 +85,25 @@ class ProfileScreen extends StatelessWidget {
 
             // Menu Items
             _buildMenuItem(
+              context: context,
               title: 'Edit Profile',
               onTap: () {
                 Navigator.push(context, MaterialPageRoute(builder: (_) => const EditProfileScreen()));
               },
             ),
             _buildMenuItem(
+              context: context,
               title: 'Topics',
-              onTap: () {},
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const TopicsScreen()));
+              },
             ),
             _buildMenuItem(
+              context: context,
               title: 'Notifications',
-              onTap: () {},
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen()));
+              },
             ),
             const SizedBox(height: 40),
 
@@ -111,14 +124,16 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMenuItem({required String title, required VoidCallback onTap}) {
+  Widget _buildMenuItem({required BuildContext context, required String title, required VoidCallback onTap}) {
+    final theme = Theme.of(context);
+    final textColor = theme.textTheme.bodyLarge?.color ?? Colors.black87;
     return ListTile(
       contentPadding: EdgeInsets.zero,
       title: Text(
         title,
-        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textColor),
       ),
-      trailing: const Icon(Icons.chevron_right, color: Colors.black),
+      trailing: Icon(Icons.chevron_right, color: textColor),
       onTap: onTap,
     );
   }

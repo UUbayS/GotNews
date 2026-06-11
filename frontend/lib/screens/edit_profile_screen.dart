@@ -72,16 +72,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Widget build(BuildContext context) {
     final user = context.read<AuthService>().currentUser;
     
+    final theme = Theme.of(context);
+    final textColor = theme.textTheme.bodyLarge?.color ?? Colors.black87;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: theme.appBarTheme.backgroundColor ?? theme.scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.blue),
+          icon: Icon(Icons.arrow_back, color: theme.colorScheme.primary),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text('Edit Profile', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)),
+        title: Text('Edit Profile', style: TextStyle(color: textColor, fontWeight: FontWeight.bold)),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
@@ -203,9 +206,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Appearance',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.textTheme.bodyLarge?.color),
                       ),
                       const SizedBox(height: 8),
                       _buildThemeOption(
@@ -257,28 +260,33 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Widget _buildFieldLabel(String label) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
       child: Text(
         label,
-        style: const TextStyle(color: Colors.grey, fontSize: 12),
+        style: TextStyle(color: theme.textTheme.bodySmall?.color ?? Colors.grey, fontSize: 12),
       ),
     );
   }
 
   InputDecoration _inputDecoration() {
+    final theme = Theme.of(context);
+    final borderColor = theme.dividerColor;
     return InputDecoration(
+      filled: true,
+      fillColor: theme.cardColor,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8.0),
-        borderSide: BorderSide(color: Colors.grey.shade300),
+        borderSide: BorderSide(color: borderColor),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8.0),
-        borderSide: BorderSide(color: Colors.grey.shade300),
+        borderSide: BorderSide(color: borderColor),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8.0),
-        borderSide: const BorderSide(color: Colors.blue),
+        borderSide: BorderSide(color: theme.colorScheme.primary),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
     );
@@ -291,12 +299,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     required ThemeMode mode,
     required ThemeMode currentMode,
   }) {
+    final theme = Theme.of(context);
     final isSelected = mode == currentMode;
     return ListTile(
-      leading: Icon(icon, color: isSelected ? const Color(0xFF2E65F3) : Colors.grey),
-      title: Text(label),
+      leading: Icon(icon, color: isSelected ? theme.colorScheme.primary : Colors.grey),
+      title: Text(label, style: TextStyle(color: theme.textTheme.bodyLarge?.color)),
       trailing: isSelected
-          ? const Icon(Icons.check, color: Color(0xFF2E65F3))
+          ? Icon(Icons.check, color: theme.colorScheme.primary)
           : null,
       onTap: () async {
         themeNotifier.value = mode;
