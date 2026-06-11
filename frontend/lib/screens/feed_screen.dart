@@ -231,6 +231,17 @@ class _FeedScreenState extends State<FeedScreen> {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(Icons.access_time, size: 14, color: Colors.white54),
+                      const SizedBox(width: 6),
+                      Text(
+                        '${item.readingTime} min read',
+                        style: const TextStyle(color: Colors.white54, fontSize: 14),
+                      ),
+                    ],
+                  ),
                 const SizedBox(height: 24),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.end,

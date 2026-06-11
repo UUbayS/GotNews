@@ -245,6 +245,17 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(Icons.access_time, size: 16, color: Colors.grey.shade600),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Estimated reading time: ${_item.readingTime} min',
+                        style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 24),
                   
                   // Divider

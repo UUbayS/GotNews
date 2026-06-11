@@ -5,11 +5,13 @@ class NewsItem {
   final String? originalContent;
   final String? imageUrl;
   final String? sourceName;
+  final String? sourceUrl;
   final String? category;
   final String? language;
   final DateTime? publishedAt;
   
   int likesCount;
+  int bookmarksCount;
   bool isLiked;
   bool isBookmarked;
 
@@ -20,10 +22,12 @@ class NewsItem {
     this.originalContent,
     this.imageUrl,
     this.sourceName,
+    this.sourceUrl,
     this.category,
     this.language,
     this.publishedAt,
     this.likesCount = 0,
+    this.bookmarksCount = 0,
     this.isLiked = false,
     this.isBookmarked = false,
   });
@@ -36,12 +40,14 @@ class NewsItem {
       originalContent: json['originalContent'],
       imageUrl: json['imageUrl'],
       sourceName: json['sourceName'],
+      sourceUrl: json['sourceUrl'],
       category: json['category'],
       language: json['language'],
       publishedAt: json['publishedAt'] != null 
           ? DateTime.parse(json['publishedAt']) 
           : null,
       likesCount: json['likesCount'] ?? 0,
+      bookmarksCount: json['bookmarksCount'] ?? 0,
       isLiked: json['isLiked'] ?? false,
       isBookmarked: json['isBookmarked'] ?? false,
     );
@@ -54,5 +60,11 @@ class NewsItem {
 
   void toggleBookmark() {
     isBookmarked = !isBookmarked;
+  }
+
+  int get readingTime {
+    final content = originalContent ?? summary ?? '';
+    final wordCount = content.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).length;
+    return (wordCount / 200).ceil().clamp(1, 60);
   }
 }
