@@ -31,3 +31,4 @@ backend/uploads/avatars/*
 # Prisma
 backend/prisma/dev.db
 backend/prisma/dev.db-journal
+docs/compose/plans/2025-06-12-feed-ux-improvements.md
