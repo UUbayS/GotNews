@@ -24,7 +24,6 @@ class FeedScreenState extends State<FeedScreen> {
   bool _hasMore = true;
   String? _nextCursor;
   String? _error;
-  bool _isRefreshing = false;
   @override
   void initState() {
     super.initState();
@@ -43,9 +42,7 @@ class FeedScreenState extends State<FeedScreen> {
   }
 
   Future<void> refreshFeed() async {
-    if (_isRefreshing) return;
     setState(() {
-      _isRefreshing = true;
       _error = null;
     });
 
@@ -61,13 +58,11 @@ class FeedScreenState extends State<FeedScreen> {
         _items.addAll(result['items']);
         _nextCursor = result['nextCursor'];
         _hasMore = result['hasMore'];
-        _isRefreshing = false;
         _error = null;
       });
       CacheService.cacheFeed(_items);
     } catch (e) {
       setState(() {
-        _isRefreshing = false;
         if (_items.isEmpty) {
           _error = 'Failed to load articles. Check your connection.';
         }
@@ -180,75 +175,28 @@ class FeedScreenState extends State<FeedScreen> {
     }
 
     return Scaffold(
-      body: Stack(
-        children: [
-          PageView.builder(
-            controller: _pageController,
-            scrollDirection: Axis.vertical,
-            itemCount: _items.length + (_hasMore ? 1 : 0),
-            onPageChanged: (index) {
-              if (index >= _items.length - 2) {
-                _fetchNextPage();
-              }
-            },
-            itemBuilder: (context, index) {
-              if (index >= _items.length) {
-                return const Center(child: CircularProgressIndicator(color: Colors.white));
-              }
-              final item = _items[index];
-              return _buildNewsCard(item);
-            },
-          ),
-          // Pull-to-refresh indicator
-          if (_isRefreshing)
-            Positioned(
-              top: MediaQuery.of(context).padding.top + 60,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.7),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      ),
-                      SizedBox(width: 8),
-                      Text(
-                        'Refreshing...',
-                        style: TextStyle(color: Colors.white, fontSize: 14),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          // Pull-down gesture detector for refresh
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 100,
-            child: GestureDetector(
-              onVerticalDragEnd: (details) {
-                if (details.primaryVelocity != null && details.primaryVelocity! > 300) {
-                  refreshFeed();
-                }
-              },
-              child: Container(color: Colors.transparent),
-            ),
-          ),
-        ],
+      body: RefreshIndicator(
+        onRefresh: refreshFeed,
+        color: Colors.white,
+        backgroundColor: Colors.black87,
+        displacement: 60,
+        child: PageView.builder(
+          controller: _pageController,
+          scrollDirection: Axis.vertical,
+          itemCount: _items.length + (_hasMore ? 1 : 0),
+          onPageChanged: (index) {
+            if (index >= _items.length - 2) {
+              _fetchNextPage();
+            }
+          },
+          itemBuilder: (context, index) {
+            if (index >= _items.length) {
+              return const Center(child: CircularProgressIndicator(color: Colors.white));
+            }
+            final item = _items[index];
+            return _buildNewsCard(item);
+          },
+        ),
       ),
     );
   }
