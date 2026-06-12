@@ -9,6 +9,7 @@ import '../services/cache_service.dart';
 import '../services/local_notification_service.dart';
 import '../screens/news_detail_screen.dart';
 import '../screens/login_screen.dart';
+import 'package:share_plus/share_plus.dart';
 
 class FeedScreen extends StatefulWidget {
   const FeedScreen({super.key});
@@ -427,6 +428,27 @@ class FeedScreenState extends State<FeedScreen> {
                                 ),
                                 const SizedBox(height: 14),
                               ],
+                            ),
+                            const SizedBox(width: 8),
+                            IconButton(
+                              iconSize: 32,
+                              icon: const Icon(Icons.share, color: Colors.white),
+                              onPressed: () async {
+                                if (item.sourceUrl == null) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('No source URL to share')),
+                                    );
+                                  }
+                                  return;
+                                }
+                                final source = item.sourceName ?? 'Unknown';
+                                final category = item.category != null ? ' • ${item.category}' : '';
+                                await Share.share(
+                                  '${item.title}\n\nvia $source$category\n\n${item.sourceUrl}',
+                                  subject: item.title,
+                                );
+                              },
                             ),
                           ],
                         );
