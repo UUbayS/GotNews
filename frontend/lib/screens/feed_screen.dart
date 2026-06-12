@@ -430,25 +430,38 @@ class FeedScreenState extends State<FeedScreen> {
                               ],
                             ),
                             const SizedBox(width: 8),
-                            IconButton(
-                              iconSize: 32,
-                              icon: const Icon(Icons.share, color: Colors.white),
-                              onPressed: () async {
-                                if (item.sourceUrl == null) {
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('No source URL to share')),
-                                    );
-                                  }
-                                  return;
-                                }
-                                final source = item.sourceName ?? 'Unknown';
-                                final category = item.category != null ? ' • ${item.category}' : '';
-                                await Share.share(
-                                  '${item.title}\n\nvia $source$category\n\n${item.sourceUrl}',
-                                  subject: item.title,
-                                );
-                              },
+                            Column(
+                              children: [
+                                IconButton(
+                                  iconSize: 32,
+                                  icon: const Icon(Icons.share, color: Colors.white),
+                                  onPressed: () async {
+                                    try {
+                                      if (item.sourceUrl == null) {
+                                        if (context.mounted) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(content: Text('No source URL to share')),
+                                          );
+                                        }
+                                        return;
+                                      }
+                                      final source = item.sourceName ?? 'Unknown';
+                                      final category = item.category != null ? ' • ${item.category}' : '';
+                                      await Share.share(
+                                        '${item.title}\n\nvia $source$category\n\n${item.sourceUrl}',
+                                        subject: item.title,
+                                      );
+                                    } catch (e) {
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
+                                        );
+                                      }
+                                    }
+                                  },
+                                ),
+                                const SizedBox(height: 14),
+                              ],
                             ),
                           ],
                         );
