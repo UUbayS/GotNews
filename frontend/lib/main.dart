@@ -75,7 +75,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
   Future<void> _checkOnboarding(String userId) async {
     final prefs = await SharedPreferences.getInstance();
     final complete = prefs.getBool('onboarding_complete_$userId') ?? false;
-    if (mounted && _onboardingComplete != complete) {
+    if (mounted) {
       setState(() {
         _onboardingComplete = complete;
       });
@@ -92,27 +92,28 @@ class _AuthWrapperState extends State<AuthWrapper> {
             body: Center(child: CircularProgressIndicator()),
           );
         }
-        if (auth.isAuthenticated) {
-          final userId = auth.currentUser?.id ?? '';
-          
-          // Reset state when user changes (login/logout)
-          if (_lastCheckedUserId != userId) {
-            _lastCheckedUserId = userId;
-            _onboardingComplete = false;
-            _checkOnboarding(userId);
-            return const Scaffold(
-              backgroundColor: Colors.white,
-              body: Center(child: CircularProgressIndicator()),
-            );
-          }
-          
-          // Skip onboarding for admin users
-          if (!auth.isAdmin && !_onboardingComplete) {
-            return const OnboardingScreen();
-          }
-          return const MainLayout();
+        if (!auth.isAuthenticated) {
+          return const LoginScreen();
         }
-        return const MainLayout(); // Guest mode - show limited layout
+
+        final userId = auth.currentUser?.id ?? '';
+        
+        // Reset state when user changes (login/logout)
+        if (_lastCheckedUserId != userId) {
+          _lastCheckedUserId = userId;
+          _onboardingComplete = false;
+          _checkOnboarding(userId);
+          return const Scaffold(
+            backgroundColor: Colors.white,
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        
+        // Skip onboarding for admin users
+        if (!auth.isAdmin && !_onboardingComplete) {
+          return const OnboardingScreen();
+        }
+        return const MainLayout();
       },
     );
   }

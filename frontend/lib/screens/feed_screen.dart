@@ -23,9 +23,6 @@ class _FeedScreenState extends State<FeedScreen> {
   String? _nextCursor;
   String? _error;
   bool _isRefreshing = false;
-  int _guestArticleCount = 0;
-  static const int _maxGuestArticles = 5;
-
   @override
   void initState() {
     super.initState();
@@ -244,16 +241,6 @@ class _FeedScreenState extends State<FeedScreen> {
   Widget _buildNewsCard(NewsItem item) {
     return GestureDetector(
       onTap: () {
-        // Check guest article limit
-        final auth = context.read<AuthService>();
-        if (!auth.isAuthenticated) {
-          if (_guestArticleCount >= _maxGuestArticles) {
-            _showLoginPopup();
-            return;
-          }
-          _guestArticleCount++;
-        }
-
         Navigator.push(
           context,
           MaterialPageRoute(

@@ -7,7 +7,7 @@ import 'dart:developer' as developer;
 
 class AuthService extends ChangeNotifier {
   User? _currentUser;
-  bool _isLoading = true;
+  bool _isLoading = false;
   String? _lastError;
 
   User? get currentUser => _currentUser;
@@ -16,9 +16,7 @@ class AuthService extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get lastError => _lastError;
 
-  AuthService() {
-    _checkAuthStatus();
-  }
+  AuthService();
 
   Future<void> _checkAuthStatus() async {
     final token = await ApiClient.storage.read(key: 'accessToken');

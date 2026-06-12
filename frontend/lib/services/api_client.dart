@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:developer' as developer;
 import 'package:http/http.dart' as http;
@@ -25,7 +26,7 @@ class ApiClient {
           Uri.parse('$baseUrl/auth/refresh'),
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode({'refreshToken': refreshToken}),
-        );
+        ).timeout(const Duration(seconds: 10));
         if (response.statusCode == 200) {
           final data = jsonDecode(response.body);
           final newToken = data['accessToken'] as String;
@@ -74,7 +75,8 @@ class ApiClient {
   static Future<http.Response> get(String endpoint) async {
     return _retryOnAuthFailure(() async {
       final headers = await _getHeaders();
-      return await http.get(Uri.parse('$baseUrl$endpoint'), headers: headers);
+      return await http.get(Uri.parse('$baseUrl$endpoint'), headers: headers)
+          .timeout(const Duration(seconds: 10));
     });
   }
 
@@ -85,7 +87,7 @@ class ApiClient {
         Uri.parse('$baseUrl$endpoint'),
         headers: headers,
         body: body != null ? jsonEncode(body) : null,
-      );
+      ).timeout(const Duration(seconds: 10));
     });
   }
 
@@ -96,14 +98,15 @@ class ApiClient {
         Uri.parse('$baseUrl$endpoint'),
         headers: headers,
         body: body != null ? jsonEncode(body) : null,
-      );
+      ).timeout(const Duration(seconds: 10));
     });
   }
 
   static Future<http.Response> delete(String endpoint) async {
     return _retryOnAuthFailure(() async {
       final headers = await _getHeaders();
-      return await http.delete(Uri.parse('$baseUrl$endpoint'), headers: headers);
+      return await http.delete(Uri.parse('$baseUrl$endpoint'), headers: headers)
+          .timeout(const Duration(seconds: 10));
     });
   }
 
@@ -118,7 +121,8 @@ class ApiClient {
         request.headers['Authorization'] = 'Bearer $token';
       }
       request.files.add(await http.MultipartFile.fromPath(fieldName, filePath));
-      final streamedResponse = await request.send();
+      final streamedResponse = await request.send()
+          .timeout(const Duration(seconds: 30));
       return await http.Response.fromStream(streamedResponse);
     });
   }
