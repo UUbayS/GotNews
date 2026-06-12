@@ -1,1 +1,33 @@
 .commandcode
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Dependencies
+node_modules/
+.dart_tool/
+.packages
+build/
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Flutter
+frontend/.flutter-plugins
+frontend/.flutter-plugins-dependencies
+
+# Backend uploads
+backend/uploads/avatars/*
+!backend/uploads/avatars/.gitkeep
+
+# Prisma
+backend/prisma/dev.db
+backend/prisma/dev.db-journal

@@ -51,12 +51,9 @@ export const searchRoutes = new Elysia({ prefix: '/api' })
     const params: any[] = []
     let p = 1
 
-    // ILIKE substring search
-    conditions.push(`(
-      "title" ILIKE $${p}
-      OR "summary" ILIKE $${p}
-    )`)
-    params.push(`%${q}%`)
+    // Full-text search using tsvector with ranking
+    conditions.push(`"search_vector" @@ plainto_tsquery('simple', $${p})`)
+    params.push(q)
     p++
 
     if (category) {
@@ -84,13 +81,20 @@ export const searchRoutes = new Elysia({ prefix: '/api' })
       ? `WHERE ${conditions.join(' AND ')}`
       : ''
 
-    // Raw SQL with ILIKE search
+    // Add ts_rank parameter (reuse $1 since it's the same search query)
+    const rankParam = 1
+    // Add limit parameter
+    params.push(limit + 1)
+    const limitParam = p
+
+    // Raw SQL with full-text search and ranking
     const sql = `
       SELECT
         a."id", a."externalId", a."title", a."originalContent", a."summary",
         a."sourceUrl", a."sourceName", a."imageUrl", a."category", a."language",
         a."publishedAt", a."createdAt", a."updatedAt",
-        COALESCE(lc.likes_count, 0)::int AS "likesCount"
+        COALESCE(lc.likes_count, 0)::int AS "likesCount",
+        ts_rank(a."search_vector", plainto_tsquery('simple', $${rankParam})) AS "rank"
       FROM "Article" a
       LEFT JOIN (
         SELECT "articleId", COUNT(*)::int AS likes_count
@@ -98,10 +102,9 @@ export const searchRoutes = new Elysia({ prefix: '/api' })
         GROUP BY "articleId"
       ) lc ON lc."articleId" = a."id"
       ${whereClause}
-      ORDER BY a."createdAt" DESC, a."id" DESC
-      LIMIT $${p}
+      ORDER BY "rank" DESC, a."createdAt" DESC, a."id" DESC
+      LIMIT $${limitParam}
     `
-    params.push(limit + 1)
 
     const articles: RawArticle[] = await prisma.$queryRawUnsafe(sql, ...params)
 

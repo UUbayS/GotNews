@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'api_client.dart';
 import '../models/user.dart';
 import 'dart:developer' as developer;
@@ -11,6 +12,7 @@ class AuthService extends ChangeNotifier {
 
   User? get currentUser => _currentUser;
   bool get isAuthenticated => _currentUser != null;
+  bool get isAdmin => _currentUser?.role == 'admin';
   bool get isLoading => _isLoading;
   String? get lastError => _lastError;
 
@@ -94,9 +96,22 @@ class AuthService extends ChangeNotifier {
 
       // Coba parse error message dari response body
       final body = jsonDecode(response.body) as Map<String, dynamic>?;
-      _lastError = body?['message'] ?? 'Login failed. Please check your credentials.';
+      final message = body?['message'];
+      
+      // Map status codes to user-friendly messages
+      if (response.statusCode == 401) {
+        _lastError = 'Email/username or password is incorrect.';
+      } else if (response.statusCode == 429) {
+        _lastError = 'Too many login attempts. Please wait a moment and try again.';
+      } else if (response.statusCode == 404) {
+        _lastError = 'Account not found. Please check your email/username.';
+      } else if (response.statusCode == 500) {
+        _lastError = 'Server error. Please try again later.';
+      } else {
+        _lastError = message ?? 'Login failed. Please check your credentials.';
+      }
     } catch (e) {
-      _lastError = 'Network error: Unable to connect to server. Please check your connection.';
+      _lastError = 'Unable to connect to server. Please check your internet connection.';
     }
     _isLoading = false;
     notifyListeners();
@@ -130,15 +145,36 @@ class AuthService extends ChangeNotifier {
           if (data['user'] != null) {
             _currentUser = User.fromJson(data['user']);
           }
+          // Clear onboarding flag for new user (per-user key)
+          final userId = _currentUser?.id ?? 'new';
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setBool('onboarding_complete_$userId', false);
           notifyListeners();
           return true;
         }
       }
 
       final body = jsonDecode(response.body) as Map<String, dynamic>?;
-      _lastError = body?['message'] ?? 'Registration failed. Please try again.';
+      final message = body?['message'];
+      
+      // Map status codes to user-friendly messages
+      if (response.statusCode == 409) {
+        if (message?.contains('Email') ?? false) {
+          _lastError = 'This email is already registered. Please use a different email or try logging in.';
+        } else if (message?.contains('Username') ?? false) {
+          _lastError = 'This username is already taken. Please choose a different username.';
+        } else {
+          _lastError = 'Account already exists. Please try logging in.';
+        }
+      } else if (response.statusCode == 429) {
+        _lastError = 'Too many registration attempts. Please wait a moment and try again.';
+      } else if (response.statusCode == 500) {
+        _lastError = 'Server error. Please try again later.';
+      } else {
+        _lastError = message ?? 'Registration failed. Please try again.';
+      }
     } catch (e) {
-      _lastError = 'Network error: Unable to connect to server. Please check your connection.';
+      _lastError = 'Unable to connect to server. Please check your internet connection.';
     }
     _isLoading = false;
     notifyListeners();
@@ -152,6 +188,7 @@ class AuthService extends ChangeNotifier {
     String? dateOfBirth,
     String? gender,
     String? address,
+    String? avatarUrl,
   }) async {
     _lastError = null;
     try {
@@ -162,6 +199,7 @@ class AuthService extends ChangeNotifier {
         if (dateOfBirth != null) 'dateOfBirth': dateOfBirth,
         if (gender != null) 'gender': gender,
         if (address != null) 'address': address,
+        if (avatarUrl != null) 'avatarUrl': avatarUrl,
       });
 
       if (response.statusCode == 200) {
@@ -174,9 +212,20 @@ class AuthService extends ChangeNotifier {
       }
 
       final body = jsonDecode(response.body) as Map<String, dynamic>?;
-      _lastError = body?['message'] ?? 'Failed to update profile.';
+      final message = body?['message'];
+      
+      // Map status codes to user-friendly messages
+      if (response.statusCode == 409) {
+        _lastError = 'Username or email already taken. Please choose a different one.';
+      } else if (response.statusCode == 429) {
+        _lastError = 'Too many requests. Please wait a moment and try again.';
+      } else if (response.statusCode == 500) {
+        _lastError = 'Server error. Please try again later.';
+      } else {
+        _lastError = message ?? 'Failed to update profile. Please try again.';
+      }
     } catch (e) {
-      _lastError = 'Network error: Unable to connect to server.';
+      _lastError = 'Unable to connect to server. Please check your internet connection.';
     }
     _isLoading = false;
     notifyListeners();
@@ -188,6 +237,10 @@ class AuthService extends ChangeNotifier {
     await ApiClient.storage.delete(key: 'refreshToken');
     _currentUser = null;
     _lastError = null;
+    notifyListeners();
+  }
+
+  void refresh() {
     notifyListeners();
   }
 }

@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
 import '../models/news_item.dart';
 import '../services/news_service.dart';
+import '../services/auth_service.dart';
 import '../screens/news_detail_screen.dart';
+import '../screens/login_screen.dart';
 
 class FeedScreen extends StatefulWidget {
   const FeedScreen({super.key});
@@ -19,11 +22,46 @@ class _FeedScreenState extends State<FeedScreen> {
   bool _hasMore = true;
   String? _nextCursor;
   String? _error;
+  bool _isRefreshing = false;
+  int _guestArticleCount = 0;
+  static const int _maxGuestArticles = 5;
 
   @override
   void initState() {
     super.initState();
     _fetchNextPage();
+  }
+
+  Future<void> _refreshFeed() async {
+    if (_isRefreshing) return;
+    setState(() {
+      _isRefreshing = true;
+      _error = null;
+    });
+
+    try {
+      _items.clear();
+      _nextCursor = null;
+      _hasMore = true;
+      final result = await NewsService.fetchFeed(
+        cursor: null,
+        personalized: true,
+      );
+      setState(() {
+        _items.addAll(result['items']);
+        _nextCursor = result['nextCursor'];
+        _hasMore = result['hasMore'];
+        _isRefreshing = false;
+        _error = null;
+      });
+    } catch (e) {
+      setState(() {
+        _isRefreshing = false;
+        if (_items.isEmpty) {
+          _error = 'Failed to load articles. Check your connection.';
+        }
+      });
+    }
   }
 
   Future<void> _fetchNextPage() async {
@@ -61,6 +99,35 @@ class _FeedScreenState extends State<FeedScreen> {
         }
       });
     }
+  }
+
+  void _showLoginPopup() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Login Required'),
+        content: const Text('Login to read more articles and access all features.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Later'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const LoginScreen()),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.primary,
+            ),
+            child: const Text('Login', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -101,22 +168,75 @@ class _FeedScreenState extends State<FeedScreen> {
     }
 
     return Scaffold(
-      body: PageView.builder(
-        controller: _pageController,
-        scrollDirection: Axis.vertical,
-        itemCount: _items.length + (_hasMore ? 1 : 0),
-        onPageChanged: (index) {
-          if (index >= _items.length - 2) {
-            _fetchNextPage();
-          }
-        },
-        itemBuilder: (context, index) {
-          if (index >= _items.length) {
-            return const Center(child: CircularProgressIndicator(color: Colors.white));
-          }
-          final item = _items[index];
-          return _buildNewsCard(item);
-        },
+      body: Stack(
+        children: [
+          PageView.builder(
+            controller: _pageController,
+            scrollDirection: Axis.vertical,
+            itemCount: _items.length + (_hasMore ? 1 : 0),
+            onPageChanged: (index) {
+              if (index >= _items.length - 2) {
+                _fetchNextPage();
+              }
+            },
+            itemBuilder: (context, index) {
+              if (index >= _items.length) {
+                return const Center(child: CircularProgressIndicator(color: Colors.white));
+              }
+              final item = _items[index];
+              return _buildNewsCard(item);
+            },
+          ),
+          // Pull-to-refresh indicator
+          if (_isRefreshing)
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 60,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.7),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        'Refreshing...',
+                        style: TextStyle(color: Colors.white, fontSize: 14),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          // Pull-down gesture detector for refresh
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 100,
+            child: GestureDetector(
+              onVerticalDragEnd: (details) {
+                if (details.primaryVelocity != null && details.primaryVelocity! > 300) {
+                  _refreshFeed();
+                }
+              },
+              child: Container(color: Colors.transparent),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -124,6 +244,16 @@ class _FeedScreenState extends State<FeedScreen> {
   Widget _buildNewsCard(NewsItem item) {
     return GestureDetector(
       onTap: () {
+        // Check guest article limit
+        final auth = context.read<AuthService>();
+        if (!auth.isAuthenticated) {
+          if (_guestArticleCount >= _maxGuestArticles) {
+            _showLoginPopup();
+            return;
+          }
+          _guestArticleCount++;
+        }
+
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -320,28 +450,33 @@ class _FeedScreenState extends State<FeedScreen> {
                             ),
                             const SizedBox(width: 8),
                             // Bookmark
-                            IconButton(
-                              iconSize: 32,
-                              icon: Icon(
-                                item.isBookmarked ? Icons.bookmark : Icons.bookmark_border,
-                                color: item.isBookmarked ? Colors.blue : Colors.white,
-                              ),
-                              onPressed: () async {
-                                try {
-                                  final success = await NewsService.toggleBookmark(item.id, item.isBookmarked);
-                                  if (success && context.mounted) {
-                                    setState(() {
-                                      item.toggleBookmark();
-                                    });
-                                  }
-                                } catch (e) {
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
-                                    );
-                                  }
-                                }
-                              },
+                            Column(
+                              children: [
+                                IconButton(
+                                  iconSize: 32,
+                                  icon: Icon(
+                                    item.isBookmarked ? Icons.bookmark : Icons.bookmark_border,
+                                    color: item.isBookmarked ? Colors.blue : Colors.white,
+                                  ),
+                                  onPressed: () async {
+                                    try {
+                                      final success = await NewsService.toggleBookmark(item.id, item.isBookmarked);
+                                      if (success && context.mounted) {
+                                        setState(() {
+                                          item.toggleBookmark();
+                                        });
+                                      }
+                                    } catch (e) {
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
+                                        );
+                                      }
+                                    }
+                                  },
+                                ),
+                                const SizedBox(height: 14),
+                              ],
                             ),
                           ],
                         );

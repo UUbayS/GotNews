@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:share_plus/share_plus.dart';
 import '../models/news_item.dart';
 import '../services/news_service.dart';
 import '../services/preferences_service.dart';
+import '../services/auth_service.dart';
+import 'ai_chat_screen.dart';
 
 class NewsDetailScreen extends StatefulWidget {
   final NewsItem item;
@@ -33,13 +36,21 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
     _item.isRead = true;
     _scrollController.addListener(_onScroll);
     _loadFontSize();
-    NewsService.recordReadingHistory(_item.id);
+    // Only record reading history for logged-in users
+    final auth = context.read<AuthService>();
+    if (auth.isAuthenticated) {
+      NewsService.recordReadingHistory(_item.id);
+    }
   }
 
   @override
   void dispose() {
     _scrollController.removeListener(_onScroll);
-    NewsService.recordReadingHistory(_item.id, readProgress: _readProgress);
+    // Only record reading history for logged-in users
+    final auth = context.read<AuthService>();
+    if (auth.isAuthenticated) {
+      NewsService.recordReadingHistory(_item.id, readProgress: _readProgress);
+    }
     _scrollController.dispose();
     super.dispose();
   }
@@ -250,23 +261,25 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
             icon: Icon(Icons.text_fields, color: theme.iconTheme.color ?? Colors.black87),
             onPressed: _showFontSizeDialog,
           ),
+          // Like button - disabled for guests
           IconButton(
             icon: _isLiking
                 ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
                 : Icon(
                     _item.isLiked ? Icons.favorite : Icons.favorite_border,
-                    color: _item.isLiked ? Colors.red : theme.iconTheme.color ?? Colors.black87,
+                    color: _item.isLiked ? Colors.red : (context.read<AuthService>().isAuthenticated ? (theme.iconTheme.color ?? Colors.black87) : Colors.grey),
                   ),
-            onPressed: _isLiking ? null : _toggleLike,
+            onPressed: (_isLiking || !context.read<AuthService>().isAuthenticated) ? null : _toggleLike,
           ),
+          // Bookmark button - disabled for guests
           IconButton(
             icon: _isBookmarking
                 ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
                 : Icon(
                     _item.isBookmarked ? Icons.bookmark : Icons.bookmark_border,
-                    color: _item.isBookmarked ? Colors.blue : theme.iconTheme.color ?? Colors.black87,
+                    color: _item.isBookmarked ? Colors.blue : (context.read<AuthService>().isAuthenticated ? (theme.iconTheme.color ?? Colors.black87) : Colors.grey),
                   ),
-            onPressed: _isBookmarking ? null : _toggleBookmark,
+            onPressed: (_isBookmarking || !context.read<AuthService>().isAuthenticated) ? null : _toggleBookmark,
           ),
           IconButton(
             icon: Icon(Icons.share, color: theme.iconTheme.color ?? Colors.black87),
@@ -455,7 +468,8 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                               ),
                             ),
                           ),
-                        if (_aiSummary == null)
+                        // AI Summary - only for logged-in users
+                        if (_aiSummary == null && context.read<AuthService>().isAuthenticated)
                           SizedBox(
                             width: double.infinity,
                             child: OutlinedButton.icon(
@@ -471,6 +485,33 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: theme.colorScheme.primary,
                                 side: BorderSide(color: theme.colorScheme.primary),
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                            ),
+                          ),
+                        const SizedBox(height: 16),
+                        // AI Chat - only for logged-in users
+                        if (context.read<AuthService>().isAuthenticated)
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => AiChatScreen(
+                                      articleId: _item.id,
+                                      articleTitle: _item.title,
+                                    ),
+                                  ),
+                                );
+                              },
+                              icon: const Icon(Icons.chat_bubble_outline, size: 18),
+                              label: const Text('Ask AI about this article'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: theme.colorScheme.secondary,
+                                side: BorderSide(color: theme.dividerColor),
                                 padding: const EdgeInsets.symmetric(vertical: 14),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                               ),

@@ -10,6 +10,7 @@ class SignUpScreen extends StatefulWidget {
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
+  final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
   final _dobController = TextEditingController();
@@ -21,19 +22,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   bool _isLoading = false;
 
   void _signup() async {
-    if (_passwordController.text.length < 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Password must be at least 6 characters')),
-      );
-      return;
-    }
-
-    if (_passwordController.text != _confirmPasswordController.text) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Passwords do not match')),
-      );
-      return;
-    }
+    if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
     final success = await context.read<AuthService>().register(
@@ -46,7 +35,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
     setState(() => _isLoading = false);
 
     if (success) {
-      Navigator.pop(context);
+      // Pop back to main layout after successful registration
+      Navigator.of(context).popUntil((route) => route.isFirst);
     } else {
       final error = context.read<AuthService>().lastError;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -70,7 +60,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 10.0),
-          child: Column(
+          child: Form(
+            key: _formKey,
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Logo Placeholder
@@ -103,6 +95,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
               TextFormField(
                 controller: _usernameController,
                 style: TextStyle(color: textColor),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Username is required';
+                  }
+                  if (value.trim().length < 3) {
+                    return 'Username must be at least 3 characters';
+                  }
+                  return null;
+                },
                 decoration: _inputDecoration('Username', theme),
               ),
               const SizedBox(height: 16),
@@ -111,8 +112,18 @@ class _SignUpScreenState extends State<SignUpScreen> {
               TextFormField(
                 controller: _emailController,
                 style: TextStyle(color: textColor),
-                decoration: _inputDecoration('Email', theme),
                 keyboardType: TextInputType.emailAddress,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Email is required';
+                  }
+                  final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                  if (!emailRegex.hasMatch(value.trim())) {
+                    return 'Please enter a valid email';
+                  }
+                  return null;
+                },
+                decoration: _inputDecoration('Email', theme),
               ),
               const SizedBox(height: 16),
 
@@ -145,6 +156,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 controller: _passwordController,
                 obscureText: _obscurePassword,
                 style: TextStyle(color: textColor),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Password is required';
+                  }
+                  if (value.length < 6) {
+                    return 'Password must be at least 6 characters';
+                  }
+                  return null;
+                },
                 decoration: _inputDecoration('Password', theme).copyWith(
                   suffixIcon: IconButton(
                     icon: Icon(
@@ -166,6 +186,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 controller: _confirmPasswordController,
                 obscureText: _obscureConfirmPassword,
                 style: TextStyle(color: textColor),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please confirm your password';
+                  }
+                  if (value != _passwordController.text) {
+                    return 'Passwords do not match';
+                  }
+                  return null;
+                },
                 decoration: _inputDecoration('Confirm Password', theme).copyWith(
                   suffixIcon: IconButton(
                     icon: Icon(
@@ -197,6 +226,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     : const Text('Sign Up', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
               ),
             ],
+          ),
           ),
         ),
       ),

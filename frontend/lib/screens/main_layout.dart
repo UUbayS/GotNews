@@ -97,10 +97,14 @@ class _MainLayoutState extends State<MainLayout> {
   }
 
   Widget _buildUserLayout() {
+    final auth = context.watch<AuthService>();
+    final isGuest = !auth.isAuthenticated;
+
+    // Guest: only Home + Profile tabs
     final userScreens = [
       const FeedScreen(),
-      const ExploreScreen(),
-      BookmarkScreen(key: _bookmarkKey),
+      if (!isGuest) const ExploreScreen(),
+      if (!isGuest) BookmarkScreen(key: _bookmarkKey),
       const ProfileScreen(),
     ];
 
@@ -116,7 +120,7 @@ class _MainLayoutState extends State<MainLayout> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) {
-          if (index == 2) {
+          if (!isGuest && index == 2) {
             _bookmarkKey.currentState?.fetchBookmarks(showLoading: false);
           }
           setState(() => _currentIndex = index);
@@ -126,20 +130,20 @@ class _MainLayoutState extends State<MainLayout> {
         selectedItemColor: Theme.of(context).colorScheme.primary,
         unselectedItemColor: Colors.grey,
         showUnselectedLabels: true,
-        items: const [
-          BottomNavigationBarItem(
+        items: [
+          const BottomNavigationBarItem(
             icon: Icon(Icons.home_filled),
             label: 'Home',
           ),
-          BottomNavigationBarItem(
+          if (!isGuest) const BottomNavigationBarItem(
             icon: Icon(CupertinoIcons.compass),
             label: 'Explore',
           ),
-          BottomNavigationBarItem(
+          if (!isGuest) const BottomNavigationBarItem(
             icon: Icon(Icons.bookmark_border),
             label: 'Bookmark',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),
             label: 'Profile',
           ),

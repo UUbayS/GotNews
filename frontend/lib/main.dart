@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'services/auth_service.dart';
 import 'services/preferences_service.dart';
 import 'screens/main_layout.dart';
 import 'screens/login_screen.dart';
+import 'screens/onboarding_screen.dart';
 
 final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.system);
 
@@ -59,8 +61,26 @@ class GotNewsApp extends StatelessWidget {
   }
 }
 
-class AuthWrapper extends StatelessWidget {
+class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
+
+  @override
+  State<AuthWrapper> createState() => _AuthWrapperState();
+}
+
+class _AuthWrapperState extends State<AuthWrapper> {
+  bool _onboardingComplete = false;
+  String? _lastCheckedUserId;
+
+  Future<void> _checkOnboarding(String userId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final complete = prefs.getBool('onboarding_complete_$userId') ?? false;
+    if (mounted && _onboardingComplete != complete) {
+      setState(() {
+        _onboardingComplete = complete;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -73,9 +93,26 @@ class AuthWrapper extends StatelessWidget {
           );
         }
         if (auth.isAuthenticated) {
+          final userId = auth.currentUser?.id ?? '';
+          
+          // Reset state when user changes (login/logout)
+          if (_lastCheckedUserId != userId) {
+            _lastCheckedUserId = userId;
+            _onboardingComplete = false;
+            _checkOnboarding(userId);
+            return const Scaffold(
+              backgroundColor: Colors.white,
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
+          
+          // Skip onboarding for admin users
+          if (!auth.isAdmin && !_onboardingComplete) {
+            return const OnboardingScreen();
+          }
           return const MainLayout();
         }
-        return const LoginScreen();
+        return const MainLayout(); // Guest mode - show limited layout
       },
     );
   }

@@ -11,12 +11,14 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  final _formKey = GlobalKey<FormState>();
   final _identifierController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _isLoading = false;
 
   void _login() async {
+    if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
     final success = await context.read<AuthService>().login(
       _identifierController.text.trim(),
@@ -25,7 +27,10 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) return;
     setState(() => _isLoading = false);
 
-    if (!success) {
+    if (success) {
+      // Pop back to main layout after successful login
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    } else {
       final error = context.read<AuthService>().lastError;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(error ?? 'Login failed. Please check your credentials.')),
@@ -45,7 +50,9 @@ class _LoginScreenState extends State<LoginScreen> {
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 40.0),
-          child: Column(
+          child: Form(
+            key: _formKey,
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 40),
@@ -79,6 +86,12 @@ class _LoginScreenState extends State<LoginScreen> {
               TextFormField(
                 controller: _identifierController,
                 style: TextStyle(color: textColor),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Email or username is required';
+                  }
+                  return null;
+                },
                 decoration: InputDecoration(
                   hintText: 'Email or Username',
                   hintStyle: TextStyle(color: Colors.grey),
@@ -102,6 +115,12 @@ class _LoginScreenState extends State<LoginScreen> {
                 controller: _passwordController,
                 obscureText: _obscurePassword,
                 style: TextStyle(color: textColor),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Password is required';
+                  }
+                  return null;
+                },
                 decoration: InputDecoration(
                   hintText: 'Password',
                   hintStyle: TextStyle(color: Colors.grey),
@@ -173,6 +192,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ],
               ),
             ],
+          ),
           ),
         ),
       ),

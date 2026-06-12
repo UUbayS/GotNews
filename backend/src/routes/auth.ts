@@ -2,12 +2,14 @@ import { Elysia, t } from 'elysia'
 import { prisma } from '../lib/prisma'
 import { password } from '../lib/password'
 import { authPlugin } from '../middleware/auth'
+import { rateLimit } from '../lib/rate-limit'
 import { mkdir } from 'fs/promises'
 import { existsSync } from 'fs'
 import { join } from 'path'
 
 export const authRoutes = new Elysia({ prefix: '/api/auth' })
   .use(authPlugin)
+  .use(rateLimit('auth', 10, 60000)) // 10 requests per minute for all auth routes
   
   // REGISTER
   .post('/register', async ({ body, jwt, jwtRefresh, set }) => {

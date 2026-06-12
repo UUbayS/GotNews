@@ -5,6 +5,9 @@ import '../services/api_client.dart';
 import 'edit_profile_screen.dart';
 import 'topics_screen.dart';
 import 'notifications_screen.dart';
+import 'reading_history_screen.dart';
+import 'login_screen.dart';
+import 'signup_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -42,6 +45,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final user = context.watch<AuthService>().currentUser;
+    final isGuest = user == null;
     final theme = Theme.of(context);
     final textColor = theme.textTheme.bodyLarge?.color ?? Colors.black87;
 
@@ -72,14 +76,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ],
         ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.notifications_none, color: textColor),
-            onPressed: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen()));
-            },
-          ),
-        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
@@ -88,15 +84,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             // Avatar
             Center(
-              child: GestureDetector(
-                onTap: () => _showFullPhoto(user?.avatarUrl),
-                child: CircleAvatar(
-                  radius: 40,
-                  backgroundImage: (user?.avatarUrl != null && user!.avatarUrl!.isNotEmpty)
-                      ? NetworkImage(ApiClient.getAvatarUrl(user.avatarUrl))
-                      : const NetworkImage('https://via.placeholder.com/150'),
-                  backgroundColor: Colors.grey.shade200,
-                ),
+              child: CircleAvatar(
+                radius: 40,
+                backgroundImage: (!isGuest && user!.avatarUrl != null && user.avatarUrl!.isNotEmpty)
+                    ? NetworkImage(ApiClient.getAvatarUrl(user.avatarUrl))
+                    : const NetworkImage('https://via.placeholder.com/150'),
+                backgroundColor: Colors.grey.shade200,
               ),
             ),
             const SizedBox(height: 16),
@@ -104,54 +97,88 @@ class _ProfileScreenState extends State<ProfileScreen> {
             // Name & Email
             Center(
               child: Text(
-                user?.name ?? 'Unknown',
+                isGuest ? 'Guest User' : (user!.name ?? 'Unknown'),
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: textColor),
               ),
             ),
             const SizedBox(height: 4),
             Center(
               child: Text(
-                user?.email ?? '',
+                isGuest ? 'Sign in to access all features' : (user!.email ?? ''),
                 style: const TextStyle(fontSize: 14, color: Colors.grey),
               ),
             ),
             const SizedBox(height: 40),
 
-            // Menu Items
-            _buildMenuItem(
-              context: context,
-              title: 'Edit Profile',
-              onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const EditProfileScreen()));
-              },
-            ),
-            _buildMenuItem(
-              context: context,
-              title: 'Topics',
-              onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const TopicsScreen()));
-              },
-            ),
-            _buildMenuItem(
-              context: context,
-              title: 'Notifications',
-              onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen()));
-              },
-            ),
-            const SizedBox(height: 40),
-
-            // Logout
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text(
-                'Log Out',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.red),
+            if (isGuest) ...[
+              // Guest: Login & Sign Up buttons
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: theme.colorScheme.primary,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                child: const Text('Login', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
               ),
-              onTap: () {
-                context.read<AuthService>().logout();
-              },
-            )
+              const SizedBox(height: 12),
+              OutlinedButton(
+                onPressed: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const SignUpScreen()));
+                },
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(color: theme.colorScheme.primary),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                child: Text('Sign Up', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.colorScheme.primary)),
+              ),
+            ] else ...[
+              // Logged in: Menu items
+              _buildMenuItem(
+                context: context,
+                title: 'Edit Profile',
+                onTap: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const EditProfileScreen()));
+                },
+              ),
+              _buildMenuItem(
+                context: context,
+                title: 'Topics',
+                onTap: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const TopicsScreen()));
+                },
+              ),
+              _buildMenuItem(
+                context: context,
+                title: 'Reading History',
+                onTap: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const ReadingHistoryScreen()));
+                },
+              ),
+              _buildMenuItem(
+                context: context,
+                title: 'Notifications',
+                onTap: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen()));
+                },
+              ),
+              const SizedBox(height: 40),
+
+              // Logout
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text(
+                  'Log Out',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.red),
+                ),
+                onTap: () {
+                  context.read<AuthService>().logout();
+                },
+              )
+            ],
           ],
         ),
       ),
