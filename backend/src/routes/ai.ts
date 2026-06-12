@@ -7,7 +7,7 @@ import { rateLimit } from '../lib/rate-limit'
 
 export const aiRoutes = new Elysia({ prefix: '/api' })
   .use(authPlugin)
-  .use(rateLimit('ai', 20, 60000))
+  .use(rateLimit('ai', 20, 60000, true))
   
   /**
    * POST /api/chat

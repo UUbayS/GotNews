@@ -1,6 +1,7 @@
 import { prisma } from '../lib/prisma'
 import { fetchLatestNews } from '../services/news-fetcher'
 import { scrapeArticleText } from '../services/scraper'
+import { notifyNewArticleForUsers } from '../services/notifications'
 export async function syncNewsJob() {
   console.log('🔄 Starting news sync job...')
   
@@ -105,6 +106,8 @@ export async function syncNewsJob() {
           }
         })
         addedCount++;
+        const articleCategory = raw.category?.[0] || 'general'
+        notifyNewArticleForUsers(raw.title, articleCategory).catch(() => {})
       } catch (e) {
         console.error(`Failed to save article ${raw.article_id}:`, e)
       }

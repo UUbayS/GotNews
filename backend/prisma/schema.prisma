@@ -20,6 +20,7 @@ model User {
   dateOfBirth  String?
   gender       String?
   address      String?
+  lastLoginAt  DateTime?
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
@@ -66,6 +67,8 @@ model Bookmark {
 
   @@unique([userId, articleId])       // User hanya bisa bookmark 1x per artikel
   @@index([userId])
+
+  folderItems BookmarkFolderItem[]
 }
 
 model Like {
@@ -125,5 +128,39 @@ model ReadingHistory {
 
   @@unique([userId, articleId])
   @@index([userId, readAt(sort: Desc)])
+}
+
+model BookmarkFolder {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items BookmarkFolderItem[]
+
+  @@unique([userId, name])
+  @@index([userId])
+}
+
+model BookmarkFolderItem {
+  id              String         @id @default(cuid())
+  folder          BookmarkFolder @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  folderId        String
+  bookmark        Bookmark       @relation(fields: [bookmarkId], references: [id], onDelete: Cascade)
+  bookmarkId      String
+  createdAt       DateTime       @default(now())
+
+  @@unique([folderId, bookmarkId])
+  @@index([folderId])
+}
+
+model SearchHistory {
+  id        String   @id @default(cuid())
+  userId    String
+  query     String
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt(sort: Desc)])
 }
 

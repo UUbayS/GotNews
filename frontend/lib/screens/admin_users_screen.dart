@@ -476,7 +476,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                           decoration: BoxDecoration(
                             color: theme.cardColor,
                             borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: Colors.grey.shade200),
+                            border: Border.all(color: Theme.of(context).dividerColor),
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.black.withOpacity(0.03),
@@ -581,7 +581,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.people_outline, size: 64, color: Colors.grey.shade300),
+          Icon(Icons.people_outline, size: 64, color: Theme.of(context).dividerColor),
           const SizedBox(height: 16),
           Text(
             'Belum ada user terdaftar',
@@ -601,7 +601,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
           margin: const EdgeInsets.only(bottom: 8),
           height: 68,
           decoration: BoxDecoration(
-            color: Colors.grey.shade100,
+            color: Theme.of(context).dividerColor,
             borderRadius: BorderRadius.circular(14),
           ),
         );

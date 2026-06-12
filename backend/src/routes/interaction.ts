@@ -20,16 +20,19 @@ export const interactionRoutes = new Elysia({ prefix: '/api' })
       return { message: 'Article not found' }
     }
 
-    try {
-      await prisma.bookmark.create({
-        data: { userId: user.id, articleId }
-      })
-      return { success: true, message: 'Bookmarked' }
-    } catch (e) {
-      console.error('[Interaction] Bookmark POST error:', e)
-      set.status = 400
-      return { message: 'Already bookmarked or error' }
+    const existing = await prisma.bookmark.findUnique({
+      where: { userId_articleId: { userId: user.id, articleId } }
+    })
+
+    if (existing) {
+      return { success: true, message: 'Already bookmarked' }
     }
+
+    await prisma.bookmark.create({
+      data: { userId: user.id, articleId }
+    })
+
+    return { success: true, message: 'Bookmarked' }
   }, { requireAuth: true })
 
   .delete('/articles/:id/bookmark', async ({ params, user, set }) => {
@@ -62,7 +65,7 @@ export const interactionRoutes = new Elysia({ prefix: '/api' })
       return { message: 'Unauthorized' }
     }
 
-    const limit = Math.min(Number(query.limit) || 10, 50)
+    const limit = Math.min(Number(query.limit) || 50, 50)
     const cursor = query.cursor as string | undefined
 
     let decodedCursor: { createdAt: Date; id: string } | null = null
@@ -139,15 +142,19 @@ export const interactionRoutes = new Elysia({ prefix: '/api' })
       return { message: 'Unauthorized' }
     }
 
-    try {
-      await prisma.like.create({
-        data: { userId: user.id, articleId: params.id }
-      })
-      return { success: true, message: 'Liked' }
-    } catch (e) {
-      set.status = 400
-      return { message: 'Already liked or error' }
+    const existing = await prisma.like.findUnique({
+      where: { userId_articleId: { userId: user.id, articleId: params.id } }
+    })
+
+    if (existing) {
+      return { success: true, message: 'Already liked' }
     }
+
+    await prisma.like.create({
+      data: { userId: user.id, articleId: params.id }
+    })
+
+    return { success: true, message: 'Liked' }
   }, { requireAuth: true })
 
   .delete('/articles/:id/like', async ({ params, user, set }) => {

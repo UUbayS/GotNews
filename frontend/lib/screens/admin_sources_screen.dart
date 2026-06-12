@@ -389,7 +389,7 @@ class _AdminSourcesScreenState extends State<AdminSourcesScreen> {
                         decoration: BoxDecoration(
                           color: Theme.of(context).cardColor,
                           borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: Colors.grey.shade200),
+                          border: Border.all(color: Theme.of(context).dividerColor),
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withOpacity(0.03),
@@ -406,7 +406,7 @@ class _AdminSourcesScreenState extends State<AdminSourcesScreen> {
                               decoration: BoxDecoration(
                                 color: active
                                     ? const Color(0xFF10B981).withOpacity(0.1)
-                                    : Colors.grey.shade100,
+                                    : Theme.of(context).dividerColor,
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Icon(
@@ -520,7 +520,7 @@ class _AdminSourcesScreenState extends State<AdminSourcesScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.rss_feed, size: 64, color: Colors.grey.shade300),
+          Icon(Icons.rss_feed, size: 64, color: Theme.of(context).dividerColor),
           const SizedBox(height: 16),
           Text(
             'Belum ada sumber berita',
@@ -545,7 +545,7 @@ class _AdminSourcesScreenState extends State<AdminSourcesScreen> {
           margin: const EdgeInsets.only(bottom: 10),
           height: 80,
           decoration: BoxDecoration(
-            color: Colors.grey.shade100,
+            color: Theme.of(context).dividerColor,
             borderRadius: BorderRadius.circular(14),
           ),
         );

@@ -1,4 +1,5 @@
 import { parseHTML } from 'linkedom';
+import { sanitizeContent } from '../lib/sanitize';
 
 /**
  * Smartly extracts main article text from a given URL.
@@ -66,10 +67,10 @@ export async function scrapeArticleText(url: string): Promise<string> {
 
     if (paragraphs.length === 0) {
       // Last resort: just get all text from the element
-      return finalElement.textContent?.trim().replace(/\s+/g, ' ').substring(0, 5000) || '';
+      return sanitizeContent(finalElement.textContent?.trim().replace(/\s+/g, ' ').substring(0, 5000) || '');
     }
 
-    return paragraphs.join('\n\n').substring(0, 8000); // Limit to 8k chars for AI context
+    return sanitizeContent(paragraphs.join('\n\n').substring(0, 8000)); // Limit to 8k chars for AI context
   } catch (error) {
     console.error(`Scraping failed for ${url}:`, error);
     return '';

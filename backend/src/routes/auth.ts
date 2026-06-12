@@ -3,13 +3,14 @@ import { prisma } from '../lib/prisma'
 import { password } from '../lib/password'
 import { authPlugin } from '../middleware/auth'
 import { rateLimit } from '../lib/rate-limit'
+import { resizeImage } from '../lib/image-resize'
 import { mkdir } from 'fs/promises'
 import { existsSync } from 'fs'
 import { join } from 'path'
 
 export const authRoutes = new Elysia({ prefix: '/api/auth' })
   .use(authPlugin)
-  .use(rateLimit('auth', 10, 60000)) // 10 requests per minute for all auth routes
+  .use(rateLimit('auth', 30, 60000, true)) // 30 requests per minute per user
   
   // REGISTER
   .post('/register', async ({ body, jwt, jwtRefresh, set }) => {
@@ -75,6 +76,11 @@ export const authRoutes = new Elysia({ prefix: '/api/auth' })
 
     const accessToken = await jwt.sign({ id: user.id, role: user.role })
     const refreshToken = await jwtRefresh.sign({ id: user.id, role: user.role })
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { lastLoginAt: new Date() }
+    }).catch(() => {})
 
     return {
       user: { 
@@ -270,7 +276,8 @@ export const authRoutes = new Elysia({ prefix: '/api/auth' })
     const filepath = join(uploadDir, filename)
 
     const buffer = Buffer.from(await file.arrayBuffer())
-    await Bun.write(filepath, buffer)
+    const resizedBuffer = await resizeImage(buffer, safeExt, 512, 512)
+    await Bun.write(filepath, resizedBuffer)
 
     const avatarUrl = `/uploads/avatars/${filename}`
 
@@ -381,4 +388,37 @@ export const authRoutes = new Elysia({ prefix: '/api/auth' })
     })
 
     return { success: true }
+  }, { requireAuth: true })
+
+  // DELETE OWN ACCOUNT (Protected)
+  .delete('/account', async ({ user, rawToken, set }) => {
+    if (!user) {
+      set.status = 401
+      return { message: 'Unauthorized' }
+    }
+
+    try {
+      const userData = await prisma.user.findUnique({ where: { id: user.id }, select: { role: true } })
+      if (userData?.role === 'admin') {
+        const adminCount = await prisma.user.count({ where: { role: 'admin' } })
+        if (adminCount <= 1) {
+          set.status = 400
+          return { message: 'Cannot delete the only administrator' }
+        }
+      }
+
+      await prisma.user.delete({ where: { id: user.id } })
+
+      if (rawToken) {
+        const payload = JSON.parse(Buffer.from(rawToken.split('.')[1]!, 'base64').toString('ascii'))
+        const expiresAt = new Date(payload.exp * 1000)
+        await prisma.invalidatedToken.create({ data: { token: rawToken, expiresAt } }).catch(() => {})
+      }
+
+      return { success: true, message: 'Account deleted successfully' }
+    } catch (e) {
+      console.error('[Auth] Account deletion error:', e)
+      set.status = 500
+      return { message: 'Failed to delete account' }
+    }
   }, { requireAuth: true })

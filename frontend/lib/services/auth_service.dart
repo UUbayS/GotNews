@@ -238,6 +238,23 @@ class AuthService extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<bool> deleteAccount() async {
+    _lastError = null;
+    try {
+      final response = await ApiClient.delete('/auth/account');
+      if (response.statusCode == 200) {
+        await logout();
+        return true;
+      }
+      final body = jsonDecode(response.body) as Map<String, dynamic>?;
+      _lastError = body?['message'] ?? 'Failed to delete account';
+    } catch (e) {
+      _lastError = 'Unable to connect to server';
+    }
+    notifyListeners();
+    return false;
+  }
+
   void refresh() {
     notifyListeners();
   }

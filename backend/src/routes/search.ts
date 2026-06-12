@@ -23,6 +23,44 @@ interface RawArticle {
 export const searchRoutes = new Elysia({ prefix: '/api' })
   .use(authPlugin)
 
+  .get('/search/history', async ({ user, set }) => {
+    if (!user) {
+      set.status = 401
+      return { message: 'Unauthorized' }
+    }
+
+    try {
+      const history = await prisma.searchHistory.findMany({
+        where: { userId: user.id },
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+        distinct: ['query']
+      })
+
+      return { data: history.map(h => ({ id: h.id, query: h.query, createdAt: h.createdAt })) }
+    } catch (e) {
+      console.error('[Search] Failed to fetch search history:', e)
+      set.status = 500
+      return { message: 'Failed to fetch search history' }
+    }
+  })
+
+  .delete('/search/history', async ({ user, set }) => {
+    if (!user) {
+      set.status = 401
+      return { message: 'Unauthorized' }
+    }
+
+    try {
+      await prisma.searchHistory.deleteMany({ where: { userId: user.id } })
+      return { success: true }
+    } catch (e) {
+      console.error('[Search] Failed to clear search history:', e)
+      set.status = 500
+      return { message: 'Failed to clear search history' }
+    }
+  })
+
   .get('/search', async ({ query, user, set }) => {
     const q = (query.q as string).trim()
     const limit = Math.min(Number(query.limit) || 10, 50)
@@ -35,6 +73,12 @@ export const searchRoutes = new Elysia({ prefix: '/api' })
         data: [],
         meta: { hasMore: false, nextCursor: null }
       }
+    }
+
+    if (user?.id) {
+      prisma.searchHistory.create({
+        data: { userId: user.id, query: q }
+      }).catch(() => {})
     }
 
     let decodedCursor = null

@@ -70,19 +70,22 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final textColor = theme.textTheme.bodyLarge?.color ?? Colors.black87;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: theme.appBarTheme.backgroundColor ?? theme.scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.blue),
+          icon: Icon(Icons.arrow_back, color: textColor),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Notifications',
           style: TextStyle(
-            color: Colors.black87,
+            color: textColor,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -101,21 +104,21 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _notifications.isEmpty
-              ? const Center(
+              ? Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(
                         Icons.notifications_none,
                         size: 64,
-                        color: Colors.grey,
+                        color: Colors.grey.shade400,
                       ),
-                      SizedBox(height: 16),
+                      const SizedBox(height: 16),
                       Text(
-                        'Belum ada notifikasi',
+                        'No notifications yet',
                         style: TextStyle(
                           fontSize: 16,
-                          color: Colors.grey,
+                          color: Colors.grey.shade500,
                         ),
                       ),
                     ],
@@ -129,47 +132,52 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     itemBuilder: (context, index) {
                       final notification = _notifications[index];
                       final isRead = notification['isRead'] ?? false;
-                      return ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: isRead
-                              ? Colors.grey.shade200
-                              : const Color(0xFF2E65F3).withOpacity(0.1),
-                          child: Icon(
-                            _getNotificationIcon(notification['type']),
-                            color: isRead
-                                ? Colors.grey
-                                : const Color(0xFF2E65F3),
-                            size: 20,
+                      return Container(
+                        color: isRead
+                            ? Colors.transparent
+                            : theme.colorScheme.primary.withOpacity(0.03),
+                        child: ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: isRead
+                                ? Colors.grey.withOpacity(0.15)
+                                : theme.colorScheme.primary.withOpacity(0.1),
+                            child: Icon(
+                              _getNotificationIcon(notification['type']),
+                              color: isRead
+                                  ? Colors.grey
+                                  : theme.colorScheme.primary,
+                              size: 20,
+                            ),
                           ),
-                        ),
-                        title: Text(
-                          notification['title'] ?? '',
-                          style: TextStyle(
-                            fontWeight:
-                                isRead ? FontWeight.normal : FontWeight.bold,
+                          title: Text(
+                            notification['title'] ?? '',
+                            style: TextStyle(
+                              fontWeight: isRead ? FontWeight.normal : FontWeight.bold,
+                              color: textColor,
+                            ),
                           ),
+                          subtitle: Text(
+                            notification['message'] ?? '',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(color: Colors.grey.shade500),
+                          ),
+                          trailing: !isRead
+                              ? Container(
+                                  width: 8,
+                                  height: 8,
+                                  decoration: BoxDecoration(
+                                    color: theme.colorScheme.primary,
+                                    shape: BoxShape.circle,
+                                  ),
+                                )
+                              : null,
+                          onTap: () {
+                            if (!isRead) {
+                              _markAsRead(notification['id']);
+                            }
+                          },
                         ),
-                        subtitle: Text(
-                          notification['message'] ?? '',
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(color: Colors.grey),
-                        ),
-                        trailing: !isRead
-                            ? Container(
-                                width: 8,
-                                height: 8,
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFF2E65F3),
-                                  shape: BoxShape.circle,
-                                ),
-                              )
-                            : null,
-                        onTap: () {
-                          if (!isRead) {
-                            _markAsRead(notification['id']);
-                          }
-                        },
                       );
                     },
                   ),

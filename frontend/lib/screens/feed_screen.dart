@@ -5,6 +5,8 @@ import 'package:shimmer/shimmer.dart';
 import '../models/news_item.dart';
 import '../services/news_service.dart';
 import '../services/auth_service.dart';
+import '../services/cache_service.dart';
+import '../services/local_notification_service.dart';
 import '../screens/news_detail_screen.dart';
 import '../screens/login_screen.dart';
 
@@ -12,10 +14,10 @@ class FeedScreen extends StatefulWidget {
   const FeedScreen({super.key});
 
   @override
-  State<FeedScreen> createState() => _FeedScreenState();
+  FeedScreenState createState() => FeedScreenState();
 }
 
-class _FeedScreenState extends State<FeedScreen> {
+class FeedScreenState extends State<FeedScreen> {
   final PageController _pageController = PageController();
   final List<NewsItem> _items = [];
   bool _isLoading = false;
@@ -26,10 +28,21 @@ class _FeedScreenState extends State<FeedScreen> {
   @override
   void initState() {
     super.initState();
+    _loadCachedFeed();
     _fetchNextPage();
+    NotificationService.checkAndShowNotifications();
   }
 
-  Future<void> _refreshFeed() async {
+  Future<void> _loadCachedFeed() async {
+    final cached = await CacheService.getCachedFeed();
+    if (cached != null && mounted && _items.isEmpty) {
+      setState(() {
+        _items.addAll(cached);
+      });
+    }
+  }
+
+  Future<void> refreshFeed() async {
     if (_isRefreshing) return;
     setState(() {
       _isRefreshing = true;
@@ -51,6 +64,7 @@ class _FeedScreenState extends State<FeedScreen> {
         _isRefreshing = false;
         _error = null;
       });
+      CacheService.cacheFeed(_items);
     } catch (e) {
       setState(() {
         _isRefreshing = false;
@@ -81,6 +95,7 @@ class _FeedScreenState extends State<FeedScreen> {
         _isLoading = false;
         _error = null;
       });
+      CacheService.cacheFeed(_items);
     } catch (e) {
       setState(() {
         _isLoading = false;
@@ -227,7 +242,7 @@ class _FeedScreenState extends State<FeedScreen> {
             child: GestureDetector(
               onVerticalDragEnd: (details) {
                 if (details.primaryVelocity != null && details.primaryVelocity! > 300) {
-                  _refreshFeed();
+                  refreshFeed();
                 }
               },
               child: Container(color: Colors.transparent),

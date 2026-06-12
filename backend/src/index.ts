@@ -8,13 +8,22 @@ import { feedRoutes } from './routes/feed'
 import { searchRoutes } from './routes/search'
 import { aiRoutes } from './routes/ai'
 import { adminRoutes } from './routes/admin'
+import { analyticsRoutes } from './routes/analytics'
+import { bookmarkFolderRoutes } from './routes/bookmark-folders'
 import { syncNewsJob } from './jobs/sync-news'
 import { readFileSync, existsSync } from 'fs'
 import { join } from 'path'
+import { logger } from './lib/logger'
+
+const CORS_ORIGINS = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(',').map(s => s.trim())
+  : process.env.NODE_ENV === 'production'
+    ? ['https://gotnews.app']
+    : '*'
 
 const app = new Elysia()
   .use(cors({
-    origin: '*',
+    origin: CORS_ORIGINS,
     allowedHeaders: ['Content-Type', 'Authorization'],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
   }))
@@ -50,10 +59,12 @@ const app = new Elysia()
   .use(interactionRoutes)
   .use(aiRoutes)
   .use(adminRoutes)
+  .use(analyticsRoutes)
+  .use(bookmarkFolderRoutes)
 
   .onError(({ code, error, set }) => {
     const msg = (error as any)?.message || String(error)
-    console.error(`[Global Error] ${code}:`, msg)
+    logger.error(`Global Error: ${code}: ${msg}`, 'GlobalError')
     set.status = set.status || 500
     return {
       message: code === 'VALIDATION' 
@@ -87,4 +98,4 @@ const app = new Elysia()
 
   .listen(3000)
 
-console.log(`🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`)
+logger.info(`Elysia is running at ${app.server?.hostname}:${app.server?.port}`, 'Server')

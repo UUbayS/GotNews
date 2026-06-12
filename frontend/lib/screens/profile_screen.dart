@@ -6,6 +6,7 @@ import 'edit_profile_screen.dart';
 import 'topics_screen.dart';
 import 'notifications_screen.dart';
 import 'reading_history_screen.dart';
+import 'reading_stats_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -80,12 +81,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Center(
-              child: CircleAvatar(
-                radius: 40,
-                backgroundImage: (user?.avatarUrl != null && user!.avatarUrl!.isNotEmpty)
-                    ? NetworkImage(ApiClient.getAvatarUrl(user.avatarUrl))
-                    : const NetworkImage('https://via.placeholder.com/150'),
-                backgroundColor: Colors.grey.shade200,
+              child: GestureDetector(
+                onTap: () => _showFullPhoto(user?.avatarUrl),
+                child: CircleAvatar(
+                  radius: 40,
+                  backgroundImage: (user?.avatarUrl != null && user!.avatarUrl!.isNotEmpty)
+                      ? NetworkImage(ApiClient.getAvatarUrl(user.avatarUrl))
+                      : const NetworkImage('https://via.placeholder.com/150'),
+                  backgroundColor: Colors.grey.shade200,
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -131,6 +135,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen()));
               },
             ),
+            _buildMenuItem(
+              context: context,
+              title: 'Reading Stats',
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const ReadingStatsScreen()));
+              },
+            ),
             const SizedBox(height: 40),
             ListTile(
               contentPadding: EdgeInsets.zero,
@@ -141,6 +152,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
               onTap: () {
                 context.read<AuthService>().logout();
               },
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text(
+                'Delete Account',
+                style: TextStyle(fontSize: 16, color: Colors.red),
+              ),
+              onTap: () => _showDeleteAccountDialog(context),
             ),
           ],
         ),
@@ -159,6 +178,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       trailing: Icon(Icons.chevron_right, color: textColor),
       onTap: onTap,
+    );
+  }
+
+  void _showDeleteAccountDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Delete Account', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: const Text('Are you sure you want to delete your account? This action cannot be undone. All your data including bookmarks, likes, and reading history will be permanently deleted.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              final auth = context.read<AuthService>();
+              final success = await auth.deleteAccount();
+              if (!success && context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(auth.lastError ?? 'Failed to delete account')),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Delete', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
     );
   }
 }

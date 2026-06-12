@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'services/auth_service.dart';
 import 'services/preferences_service.dart';
+import 'services/local_notification_service.dart';
 import 'screens/main_layout.dart';
 import 'screens/login_screen.dart';
 import 'screens/onboarding_screen.dart';
@@ -13,6 +14,8 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final prefsService = await PreferencesService.create();
   themeNotifier.value = prefsService.getThemeMode();
+
+  await NotificationService.initialize();
 
   runApp(
     MultiProvider(

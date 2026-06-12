@@ -4,8 +4,10 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
 import '../models/news_item.dart';
 import '../services/news_service.dart';
+import '../services/auth_service.dart';
 import '../widgets/news_list_tile.dart';
 import '../screens/news_detail_screen.dart';
+import 'package:provider/provider.dart';
 
 class ExploreScreen extends StatefulWidget {
   const ExploreScreen({super.key});
@@ -16,6 +18,7 @@ class ExploreScreen extends StatefulWidget {
 
 class _ExploreScreenState extends State<ExploreScreen> {
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
   List<NewsItem> _items = [];
   bool _isLoading = true;
   String _selectedCategory = 'All';
@@ -25,6 +28,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
   List<NewsItem> _searchResults = [];
   bool _isSearching = false;
   Timer? _debounceTimer;
+  List<Map<String, dynamic>> _searchHistory = [];
+  bool _showSearchHistory = false;
 
   final List<String> _categories = [
     'All', 'Sports', 'Politics', 'Business', 'Health', 'Travel', 'Science'
@@ -34,12 +39,23 @@ class _ExploreScreenState extends State<ExploreScreen> {
   void initState() {
     super.initState();
     _fetchNews();
+    _loadSearchHistory();
+  }
+
+  Future<void> _loadSearchHistory() async {
+    try {
+      final history = await NewsService.getSearchHistory();
+      if (mounted) {
+        setState(() => _searchHistory = history);
+      }
+    } catch (e) {}
   }
 
   @override
   void dispose() {
     _debounceTimer?.cancel();
     _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
@@ -104,11 +120,14 @@ class _ExploreScreenState extends State<ExploreScreen> {
   void _clearSearch() {
     _debounceTimer?.cancel();
     _searchController.clear();
+    _searchFocusNode.unfocus();
     setState(() {
       _searchQuery = '';
       _isSearching = false;
       _searchResults = [];
+      _showSearchHistory = false;
     });
+    _loadSearchHistory();
   }
 
   void _onCategorySelected(String category) {
@@ -172,7 +191,14 @@ class _ExploreScreenState extends State<ExploreScreen> {
                 // Search Bar
                 TextField(
                   controller: _searchController,
+                  focusNode: _searchFocusNode,
                   onChanged: _onSearchChanged,
+                  onTap: () {
+                    if (_searchController.text.trim().isEmpty && _searchHistory.isNotEmpty) {
+                      setState(() => _showSearchHistory = true);
+                    }
+                  },
+                  onSubmitted: (_) => setState(() => _showSearchHistory = false),
                   style: TextStyle(color: textColor),
                   decoration: InputDecoration(
                     hintText: 'Search',
@@ -198,14 +224,77 @@ class _ExploreScreenState extends State<ExploreScreen> {
                   ),
                 ),
 
+                // Search History
+                if (_showSearchHistory && _searchHistory.isNotEmpty && !isSearchActive) ...[
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Recent', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: textColor)),
+                      TextButton(
+                        onPressed: () async {
+                          await NewsService.clearSearchHistory();
+                          setState(() => _searchHistory.clear());
+                        },
+                        child: const Text('Clear', style: TextStyle(color: Colors.red, fontSize: 12)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: (_searchHistory.take(8).map((h) => GestureDetector(
+                      onTap: () {
+                        _searchController.text = h['query'];
+                        _onSearchChanged(h['query']);
+                        setState(() => _showSearchHistory = false);
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: theme.cardColor,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: theme.dividerColor),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.history, size: 14, color: Colors.grey.shade500),
+                            const SizedBox(width: 6),
+                            Text(h['query'], style: TextStyle(fontSize: 13, color: textColor)),
+                          ],
+                        ),
+                      ),
+                    )).toList()),
+                  ),
+                ],
+
                 // ----- Search Mode -----
                 if (isSearchActive) ...[
-                  const SizedBox(height: 24),
-                  Text(
-                    'Search Results',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textColor),
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      Text(
+                        'Results',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textColor),
+                      ),
+                      const SizedBox(width: 8),
+                      if (!_isSearching)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.primary.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            '${_searchResults.length}',
+                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
+                          ),
+                        ),
+                    ],
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
                   // Categories in search mode
                   SizedBox(
                     height: 35,

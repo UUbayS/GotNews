@@ -9,8 +9,9 @@ class NewsListTile extends StatefulWidget {
   final NewsItem item;
   final VoidCallback? onTap;
   final bool isRead;
+  final Widget? trailing;
 
-  const NewsListTile({super.key, required this.item, this.onTap, this.isRead = false});
+  const NewsListTile({super.key, required this.item, this.onTap, this.isRead = false, this.trailing});
 
   @override
   State<NewsListTile> createState() => _NewsListTileState();
@@ -43,15 +44,16 @@ class _NewsListTileState extends State<NewsListTile> {
   void _toggleBookmark() async {
     setState(() => _isBookmarking = true);
     try {
-      final success = await NewsService.toggleBookmark(widget.item.id, widget.item.isBookmarked);
+      final wasBookmarked = widget.item.isBookmarked;
+      final success = await NewsService.toggleBookmark(widget.item.id, wasBookmarked);
       if (success) {
-        setState(() {
-          widget.item.toggleBookmark();
-        });
-      } else {
+        setState(() => widget.item.toggleBookmark());
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Failed to update bookmark. Please check your connection or login status.')),
+            SnackBar(
+              content: Text(wasBookmarked ? 'Bookmark removed' : 'Bookmarked'),
+              duration: const Duration(seconds: 1),
+            ),
           );
         }
       }
@@ -195,6 +197,7 @@ class _NewsListTileState extends State<NewsListTile> {
             // More options
             Column(
               children: [
+                if (widget.trailing != null) widget.trailing!,
                 IconButton(
                   icon: _isLiking
                       ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))

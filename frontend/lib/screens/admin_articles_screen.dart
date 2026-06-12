@@ -494,11 +494,11 @@ class _AdminArticlesScreenState extends State<AdminArticlesScreen> {
           contentPadding: const EdgeInsets.symmetric(vertical: 0),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: Colors.grey.shade300),
+            borderSide: BorderSide(color: Theme.of(context).dividerColor),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: Colors.grey.shade300),
+            borderSide: BorderSide(color: Theme.of(context).dividerColor),
           ),
           filled: true,
           fillColor: Colors.grey.shade50,
@@ -565,7 +565,7 @@ class _AdminArticlesScreenState extends State<AdminArticlesScreen> {
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: Theme.of(context).dividerColor),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.03),
@@ -585,10 +585,10 @@ class _AdminArticlesScreenState extends State<AdminArticlesScreen> {
               child: CachedNetworkImage(
                 imageUrl: a.imageUrl ?? '',
                 fit: BoxFit.cover,
-                placeholder: (context, url) => Container(color: Colors.grey.shade100),
+                placeholder: (context, url) => Container(color: Theme.of(context).dividerColor),
                 errorWidget: (c, u, e) => Container(
-                  color: Colors.grey.shade100,
-                  child: Icon(Icons.article_outlined, color: Colors.grey.shade300, size: 30),
+                  color: Theme.of(context).dividerColor,
+                  child: Icon(Icons.article_outlined, color: Theme.of(context).dividerColor, size: 30),
                 ),
               ),
             ),
@@ -736,7 +736,7 @@ class _AdminArticlesScreenState extends State<AdminArticlesScreen> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
+                    color: Theme.of(context).dividerColor,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -753,11 +753,11 @@ class _AdminArticlesScreenState extends State<AdminArticlesScreen> {
                     fit: BoxFit.cover,
                     placeholder: (context, url) => Container(
                       height: 200,
-                      color: Colors.grey.shade100,
+                      color: Theme.of(context).dividerColor,
                     ),
                     errorWidget: (c, u, e) => Container(
                       height: 200,
-                      color: Colors.grey.shade100,
+                      color: Theme.of(context).dividerColor,
                       child: const Icon(Icons.image_not_supported, color: Colors.grey, size: 40),
                     ),
                   ),
@@ -831,7 +831,7 @@ class _AdminArticlesScreenState extends State<AdminArticlesScreen> {
                     ),
                     const SizedBox(height: 20),
 
-                    Divider(color: Colors.grey.shade200),
+                    Divider(color: Theme.of(context).dividerColor),
                     const SizedBox(height: 16),
 
                     // Summary
@@ -848,7 +848,7 @@ class _AdminArticlesScreenState extends State<AdminArticlesScreen> {
                     // Original content
                     if (a.originalContent != null && a.originalContent!.isNotEmpty) ...[
                       const SizedBox(height: 20),
-                      Divider(color: Colors.grey.shade200),
+                      Divider(color: Theme.of(context).dividerColor),
                       const SizedBox(height: 16),
                       Text(
                         'Konten Asli',
@@ -943,7 +943,7 @@ class _AdminArticlesScreenState extends State<AdminArticlesScreen> {
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       decoration: BoxDecoration(
         color: Theme.of(context).scaffoldBackgroundColor,
-        border: Border(top: BorderSide(color: Colors.grey.shade200)),
+        border: Border(top: BorderSide(color: Theme.of(context).dividerColor)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -958,7 +958,7 @@ class _AdminArticlesScreenState extends State<AdminArticlesScreen> {
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              side: BorderSide(color: _currentPage > 1 ? const Color(0xFF2E65F3) : Colors.grey.shade300),
+              side: BorderSide(color: _currentPage > 1 ? const Color(0xFF2E65F3) : Theme.of(context).dividerColor),
             ),
             child: Text(
               'Prev',
@@ -982,7 +982,7 @@ class _AdminArticlesScreenState extends State<AdminArticlesScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               side: BorderSide(
-                color: _currentPage < _totalPages ? const Color(0xFF2E65F3) : Colors.grey.shade300,
+                color: _currentPage < _totalPages ? const Color(0xFF2E65F3) : Theme.of(context).dividerColor,
               ),
             ),
             child: Text(
@@ -1002,7 +1002,7 @@ class _AdminArticlesScreenState extends State<AdminArticlesScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.article_outlined, size: 64, color: Colors.grey.shade300),
+          Icon(Icons.article_outlined, size: 64, color: Theme.of(context).dividerColor),
           const SizedBox(height: 16),
           Text(
             'Tidak ada artikel ditemukan',
@@ -1022,7 +1022,7 @@ class _AdminArticlesScreenState extends State<AdminArticlesScreen> {
           margin: const EdgeInsets.only(bottom: 10),
           height: 114,
           decoration: BoxDecoration(
-            color: Colors.grey.shade100,
+            color: Theme.of(context).dividerColor,
             borderRadius: BorderRadius.circular(14),
           ),
         );

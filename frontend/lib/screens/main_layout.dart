@@ -22,6 +22,7 @@ class MainLayout extends StatefulWidget {
 class _MainLayoutState extends State<MainLayout> {
   int _currentIndex = 0;
   final GlobalKey<BookmarkScreenState> _bookmarkKey = GlobalKey<BookmarkScreenState>();
+  final GlobalKey<FeedScreenState> _feedKey = GlobalKey<FeedScreenState>();
 
   @override
   Widget build(BuildContext context) {
@@ -98,7 +99,7 @@ class _MainLayoutState extends State<MainLayout> {
 
   Widget _buildUserLayout() {
     final userScreens = [
-      const FeedScreen(),
+      FeedScreen(key: _feedKey),
       const ExploreScreen(),
       BookmarkScreen(key: _bookmarkKey),
       const ProfileScreen(),
@@ -116,6 +117,9 @@ class _MainLayoutState extends State<MainLayout> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) {
+          if (index == 0) {
+            _feedKey.currentState?.refreshFeed();
+          }
           if (index == 2) {
             _bookmarkKey.currentState?.fetchBookmarks(showLoading: false);
           }

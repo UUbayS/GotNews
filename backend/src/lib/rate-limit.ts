@@ -7,10 +7,12 @@ interface RateLimitEntry {
 
 const stores = new Map<string, Map<string, RateLimitEntry>>()
 
-export function rateLimit(storeName: string, maxRequests: number, windowMs: number) {
+export function rateLimit(storeName: string, maxRequests: number, windowMs: number, useUserId = false) {
   return new Elysia()
-    .derive({ as: 'scoped' }, ({ request, set }) => {
-      const key = request.headers.get('x-forwarded-for') || 'anonymous'
+    .derive({ as: 'scoped' }, ({ request, set, user }: any) => {
+      const key = useUserId && user?.id
+        ? `user:${user.id}`
+        : request.headers.get('x-forwarded-for') || 'anonymous'
       const now = Date.now()
 
       if (!stores.has(storeName)) {

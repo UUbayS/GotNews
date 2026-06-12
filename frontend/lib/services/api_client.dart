@@ -5,10 +5,25 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ApiClient {
-  static const String _developmentUrl = 'http://localhost:3000/api';
-  static const String _uploadsBaseUrl = 'http://localhost:3000';
+  static String? _customBaseUrl;
 
-  static String get baseUrl => _developmentUrl;
+  static String get baseUrl {
+    if (_customBaseUrl != null) return _customBaseUrl!;
+    const envUrl = String.fromEnvironment('API_BASE_URL', defaultValue: '');
+    if (envUrl.isNotEmpty) return envUrl;
+    return 'http://localhost:3000/api';
+  }
+
+  static String get _uploadsBaseUrl {
+    if (_customBaseUrl != null) return _customBaseUrl!.replaceAll('/api', '');
+    const envUrl = String.fromEnvironment('API_BASE_URL', defaultValue: '');
+    if (envUrl.isNotEmpty) return envUrl.replaceAll('/api', '');
+    return 'http://localhost:3000';
+  }
+
+  static void setBaseUrl(String url) {
+    _customBaseUrl = url;
+  }
 
   static String getAvatarUrl(String? avatarUrl) {
     if (avatarUrl == null || avatarUrl.isEmpty) return '';

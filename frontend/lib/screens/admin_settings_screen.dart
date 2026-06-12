@@ -115,7 +115,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
               width: 32,
               height: 32,
               decoration: BoxDecoration(
-                color: Colors.grey.shade100,
+                color: Theme.of(context).dividerColor,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(Icons.settings, color: Colors.grey.shade600, size: 18),
@@ -148,7 +148,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
               decoration: BoxDecoration(
                 color: theme.cardColor,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.grey.shade200),
+                border: Border.all(color: theme.dividerColor),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.03),
@@ -223,7 +223,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
               decoration: BoxDecoration(
                 color: theme.cardColor,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.grey.shade200),
+                border: Border.all(color: theme.dividerColor),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.03),
@@ -261,7 +261,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                         : const Icon(Icons.chevron_right, color: Colors.grey),
                     onTap: _isSyncing ? null : _triggerSync,
                   ),
-                  Divider(height: 1, color: Colors.grey.shade200),
+                  Divider(height: 1, color: theme.dividerColor),
                   ListTile(
                     leading: Container(
                       width: 40,
@@ -298,7 +298,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
               decoration: BoxDecoration(
                 color: theme.cardColor,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.grey.shade200),
+                border: Border.all(color: theme.dividerColor),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.03),
@@ -314,7 +314,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
+                        color: Colors.grey.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(Icons.info_outline, color: Colors.grey.shade600, size: 20),
@@ -328,7 +328,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                       style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
                     ),
                   ),
-                  Divider(height: 1, color: Colors.grey.shade200),
+                  Divider(height: 1, color: theme.dividerColor),
                   ListTile(
                     leading: Container(
                       width: 40,

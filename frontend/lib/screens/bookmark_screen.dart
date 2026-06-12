@@ -125,9 +125,21 @@ class BookmarkScreenState extends State<BookmarkScreen> {
                     ? const Center(child: CircularProgressIndicator())
                     : displayItems.isEmpty
                         ? Center(
-                            child: Text(
-                              isSearchActive ? 'No bookmarks match your search' : 'No bookmarks yet.',
-                              style: const TextStyle(color: Colors.grey, fontSize: 16),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.bookmark_border, size: 64, color: theme.dividerColor),
+                                const SizedBox(height: 16),
+                                Text(
+                                  isSearchActive ? 'No bookmarks match your search' : 'No bookmarks yet.',
+                                  style: TextStyle(color: Colors.grey.shade500, fontSize: 16),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Tap the bookmark icon on any article to save it',
+                                  style: TextStyle(color: Colors.grey.shade400, fontSize: 13),
+                                ),
+                              ],
                             ),
                           )
                         : ListView.builder(

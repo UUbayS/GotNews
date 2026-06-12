@@ -183,4 +183,62 @@ class NewsService {
     }
     throw Exception('Failed to fetch reading history (status ${response.statusCode})');
   }
+
+  static Future<Map<String, dynamic>> getReadingStats() async {
+    final response = await ApiClient.get('/analytics/reading-stats');
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    }
+    throw Exception('Failed to fetch reading stats');
+  }
+
+  static Future<List<Map<String, dynamic>>> getSearchHistory() async {
+    final response = await ApiClient.get('/search/history');
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      return List<Map<String, dynamic>>.from(data['data'] ?? []);
+    }
+    return [];
+  }
+
+  static Future<void> clearSearchHistory() async {
+    await ApiClient.delete('/search/history');
+  }
+
+  static Future<List<Map<String, dynamic>>> getBookmarkFolders() async {
+    final response = await ApiClient.get('/bookmark-folders');
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      return List<Map<String, dynamic>>.from(data['data'] ?? []);
+    }
+    return [];
+  }
+
+  static Future<Map<String, dynamic>> createBookmarkFolder(String name) async {
+    final response = await ApiClient.post('/bookmark-folders', body: {'name': name});
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    }
+    throw Exception('Failed to create folder');
+  }
+
+  static Future<void> deleteBookmarkFolder(String folderId) async {
+    await ApiClient.delete('/bookmark-folders/$folderId');
+  }
+
+  static Future<void> addBookmarkToFolder(String folderId, String bookmarkId) async {
+    await ApiClient.post('/bookmark-folders/$folderId/items', body: {'bookmarkId': bookmarkId});
+  }
+
+  static Future<void> removeBookmarkFromFolder(String folderId, String itemId) async {
+    await ApiClient.delete('/bookmark-folders/$folderId/items/$itemId');
+  }
+
+  static Future<Map<String, dynamic>> getBookmarkFolderDetail(String folderId) async {
+    final response = await ApiClient.get('/bookmark-folders/$folderId');
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    }
+    throw Exception('Failed to fetch folder');
+  }
 }
