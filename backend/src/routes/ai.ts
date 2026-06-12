@@ -49,8 +49,9 @@ export const aiRoutes = new Elysia({ prefix: '/api' })
   /**
    * POST /api/articles/:id/summarize
    * Protected route — generates AI summary on-demand for a specific article.
+   * Uses cached aiSummary field. Pass ?force=true to regenerate.
    */
-  .post('/articles/:id/summarize', async ({ params, user, set }) => {
+  .post('/articles/:id/summarize', async ({ params, user, query, set }) => {
     if (!user) {
       set.status = 401
       return { message: 'Unauthorized. Please login to use AI features.' }
@@ -63,6 +64,16 @@ export const aiRoutes = new Elysia({ prefix: '/api' })
       return { message: 'Article not found' }
     }
 
+    const force = query.force === 'true'
+
+    if (!force && article.aiSummary) {
+      return {
+        summary: article.aiSummary,
+        cached: true,
+        generatedAt: article.aiSummaryAt,
+      }
+    }
+
     const content = article.originalContent || article.summary || article.title
 
     try {
@@ -72,17 +83,26 @@ export const aiRoutes = new Elysia({ prefix: '/api' })
         return { message: 'AI failed to generate summary' }
       }
 
+      const now = new Date()
       await prisma.article.update({
         where: { id: params.id },
-        data: { summary }
+        data: { aiSummary: summary, aiSummaryAt: now }
       })
 
-      return { summary }
+      return {
+        summary,
+        cached: false,
+        regenerated: force,
+        generatedAt: now,
+      }
     } catch (e) {
       console.error('Summarization error:', e)
       set.status = 500
       return { message: 'AI summarization failed' }
     }
   }, {
+    query: t.Object({
+      force: t.Optional(t.String()),
+    }),
     requireAuth: true
   })

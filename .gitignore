@@ -1,5 +1,5 @@
 .commandcode
-
+.mimocode
 # Environment variables
 .env
 .env.local

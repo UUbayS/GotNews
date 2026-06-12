@@ -9,6 +9,8 @@ class User {
   final String? address;
   final int bookmarksCount;
   final int likesCount;
+  final String? role;
+  final DateTime? createdAt;
 
   User({
     required this.id,
@@ -21,6 +23,8 @@ class User {
     this.address,
     this.bookmarksCount = 0,
     this.likesCount = 0,
+    this.role,
+    this.createdAt,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -35,6 +39,8 @@ class User {
       address: json['address'],
       bookmarksCount: json['_count']?['bookmarks'] ?? 0,
       likesCount: json['_count']?['likes'] ?? 0,
+      role: json['role'],
+      createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt']) : null,
     );
   }
 }

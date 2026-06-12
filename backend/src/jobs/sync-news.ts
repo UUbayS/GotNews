@@ -16,6 +16,31 @@ export async function syncNewsJob() {
     let addedCount = 0;
     
     for (const raw of rawArticles) {
+      // 0. Check news source status
+      const source = await prisma.newsSource.findUnique({
+        where: { sourceId: raw.source_id }
+      })
+      if (source) {
+        if (!source.isActive) {
+          console.log(`Skipping article from inactive source: ${raw.source_id}`)
+          continue
+        }
+        await prisma.newsSource.update({
+          where: { id: source.id },
+          data: { lastFetchedAt: new Date() }
+        }).catch(e => console.error(`Failed to update lastFetchedAt:`, e))
+      } else {
+        await prisma.newsSource.create({
+          data: {
+            name: raw.source_id,
+            sourceId: raw.source_id,
+            language: lang,
+            isActive: true,
+            lastFetchedAt: new Date()
+          }
+        }).catch(e => console.error(`Failed to auto-create NewsSource:`, e))
+      }
+
       // 1. Filter out Ads / Promos
       const adKeywords = [
         'promo', 'diskon', 'voucher', 'cashback', 'belanja', 'jual', 'beli', 

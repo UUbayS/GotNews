@@ -9,6 +9,8 @@ import { searchRoutes } from './routes/search'
 import { aiRoutes } from './routes/ai'
 import { adminRoutes } from './routes/admin'
 import { syncNewsJob } from './jobs/sync-news'
+import { readFileSync, existsSync } from 'fs'
+import { join } from 'path'
 
 const app = new Elysia()
   .use(cors({
@@ -62,6 +64,27 @@ const app = new Elysia()
   })
 
   .get('/', () => 'NewsScroll API is running 🚀')
+
+  // Serve uploaded files
+  .get('/uploads/avatars/:filename', ({ params, set }) => {
+    const filepath = join(process.cwd(), 'uploads', 'avatars', params.filename)
+    if (!existsSync(filepath)) {
+      set.status = 404
+      return { message: 'File not found' }
+    }
+    const file = Bun.file(filepath)
+    const ext = params.filename.split('.').pop()?.toLowerCase() || 'jpg'
+    const mimeTypes: Record<string, string> = {
+      jpg: 'image/jpeg',
+      jpeg: 'image/jpeg',
+      png: 'image/png',
+      webp: 'image/webp',
+      gif: 'image/gif',
+    }
+    set.headers['Content-Type'] = mimeTypes[ext] || 'application/octet-stream'
+    return file
+  })
+
   .listen(3000)
 
 console.log(`🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`)
