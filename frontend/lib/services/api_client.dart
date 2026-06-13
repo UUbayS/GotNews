@@ -95,14 +95,23 @@ class ApiClient {
     });
   }
 
-  static Future<http.Response> post(String endpoint, {Map<String, dynamic>? body}) async {
+  static Future<http.Response> post(
+    String endpoint, {
+    Map<String, dynamic>? body,
+    Duration? timeout,
+  }) async {
     return _retryOnAuthFailure(() async {
       final headers = await _getHeaders(hasBody: body != null);
-      return await http.post(
+      final request = http.post(
         Uri.parse('$baseUrl$endpoint'),
         headers: headers,
         body: body != null ? jsonEncode(body) : null,
-      ).timeout(const Duration(seconds: 10));
+      );
+      // Default 10s timeout; pass `timeout: null` to wait indefinitely
+      // (e.g. long-running endpoints like /admin/sync).
+      return timeout == null
+          ? await request
+          : await request.timeout(timeout);
     });
   }
 

@@ -14,8 +14,10 @@ class AdminService {
   }
 
   // Trigger sync
+  // Note: sync can take a long time (fetches from many news sources),
+  // so we disable the client-side timeout (timeout: null).
   static Future<bool> triggerSync() async {
-    final response = await ApiClient.post('/admin/sync');
+    final response = await ApiClient.post('/admin/sync', timeout: null);
     if (response.statusCode == 200) {
       return true;
     }
