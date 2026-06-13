@@ -186,7 +186,7 @@ export const interactionRoutes = new Elysia({ prefix: '/api' })
       return { message: 'Unauthorized' }
     }
 
-    const { articleId, readProgress } = body
+    const { articleId, readProgress, durationSec } = body
 
     const article = await prisma.article.findUnique({ where: { id: articleId } })
     if (!article) {
@@ -202,11 +202,13 @@ export const interactionRoutes = new Elysia({ prefix: '/api' })
         update: {
           readAt: new Date(),
           readProgress: readProgress ?? 0,
+          durationSec: { increment: durationSec ?? 0 },
         },
         create: {
           userId: user.id,
           articleId,
           readProgress: readProgress ?? 0,
+          durationSec: durationSec ?? 0,
         }
       })
       return { success: true, history }
@@ -219,6 +221,7 @@ export const interactionRoutes = new Elysia({ prefix: '/api' })
     body: t.Object({
       articleId: t.String(),
       readProgress: t.Optional(t.Number()),
+      durationSec: t.Optional(t.Number()),
     }),
     requireAuth: true
   })
@@ -268,6 +271,7 @@ export const interactionRoutes = new Elysia({ prefix: '/api' })
         isBookmarked: bookmarkedSet.has(h.article.id),
         readProgress: h.readProgress,
         readAt: h.readAt,
+        durationSec: h.durationSec,
       })),
     }
   }, {

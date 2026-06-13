@@ -102,6 +102,7 @@ export async function syncNewsJob() {
             imageUrl: raw.image_url,
             category: raw.category?.[0] || 'general',
             language: lang,
+            country: raw.country?.[0] ?? null,
             publishedAt: raw.pubDate ? new Date(raw.pubDate) : new Date(),
           }
         })

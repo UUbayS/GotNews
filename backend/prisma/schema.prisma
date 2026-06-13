@@ -9,24 +9,30 @@ datasource db {
 }
 
 model User {
-  id             String           @id @default(cuid())
-  name           String
-  username       String?          @unique
-  email          String           @unique
-  password       String
-  role           String           @default("user")
-  avatarUrl      String?
-  preferences    String           @default("[]")
-  dateOfBirth    String?
-  gender         String?
-  address        String?
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-  lastLoginAt    DateTime?
-  bookmarks      Bookmark[]
-  likes          Like[]
-  notifications  Notification[]
-  readingHistory ReadingHistory[]
+  id                String           @id @default(cuid())
+  name              String
+  username          String?          @unique
+  email             String           @unique
+  password          String
+  role              String           @default("user")
+  avatarUrl         String?
+  preferences       String           @default("[]")
+  dateOfBirth       String?
+  gender            String?
+  address           String?
+  latitude          Float?
+  longitude         Float?
+  countryCode       String?
+  city              String?
+  locationUpdatedAt DateTime?
+  locationEnabled   Boolean          @default(false)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  lastLoginAt       DateTime?
+  bookmarks         Bookmark[]
+  likes             Like[]
+  notifications     Notification[]
+  readingHistory    ReadingHistory[]
 }
 
 model Article {
@@ -40,6 +46,7 @@ model Article {
   imageUrl        String?
   category        String?
   language        String                   @default("en")
+  country         String?
   publishedAt     DateTime?
   createdAt       DateTime                 @default(now())
   updatedAt       DateTime                 @updatedAt
@@ -53,6 +60,7 @@ model Article {
   @@index([createdAt(sort: Desc), id(sort: Desc)])
   @@index([category])
   @@index([language])
+  @@index([country])
 }
 
 model Bookmark {
@@ -120,6 +128,7 @@ model ReadingHistory {
   articleId    String
   readAt       DateTime @default(now())
   readProgress Float    @default(0)
+  durationSec  Int      @default(0)
   article      Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 

@@ -3,6 +3,7 @@ import { prisma } from '../lib/prisma'
 import { Prisma } from '@prisma/client'
 import { decodeCursor, encodeCursor } from '../lib/cursor'
 import { authPlugin } from '../middleware/auth'
+import { scoreArticle, buildUserContext } from '../services/personalization'
 
 export const feedRoutes = new Elysia({ prefix: '/api' })
   .use(authPlugin)
@@ -12,6 +13,7 @@ export const feedRoutes = new Elysia({ prefix: '/api' })
     const cursor = query.cursor as string | undefined
     const category = query.category as string | undefined
     const language = query.language as string | undefined
+    const country = query.country as string | undefined
     const personalized = query.personalized === 'true'
 
     let decodedCursor = null;
@@ -23,23 +25,11 @@ export const feedRoutes = new Elysia({ prefix: '/api' })
       }
     }
 
-    // Get user's preferred categories from bookmarks
-    let topCategories: string[] = []
-    if (personalized && user?.id && !decodedCursor) {
-      const userBookmarks = await prisma.bookmark.findMany({
-        where: { userId: user.id },
-        include: { article: { select: { category: true } } },
-        take: 50
-      })
-      topCategories = [...new Set(
-        userBookmarks.map(b => b.article.category).filter((c): c is string => c !== null)
-      )]
-    }
-
     // Build WHERE clause
     const whereClause: Prisma.ArticleWhereInput = {}
     if (category) whereClause.category = category
     if (language) whereClause.language = language
+    if (country) whereClause.country = country
 
     if (decodedCursor) {
       whereClause.OR = [
@@ -53,7 +43,13 @@ export const feedRoutes = new Elysia({ prefix: '/api' })
       ]
     }
 
-    const fetchLimit = topCategories.length > 0 ? limit * 3 + 1 : limit + 1
+    // Build user context for personalized scoring (only on first page)
+    let userContext: Awaited<ReturnType<typeof buildUserContext>> = null
+    if (personalized && user?.id && !decodedCursor) {
+      userContext = await buildUserContext(user.id)
+    }
+
+    const fetchLimit = (userContext?.topBookmarkCategories.length ?? 0) > 0 ? limit * 3 + 1 : limit + 1
 
     // Fetch articles
     const articles = await prisma.article.findMany({
@@ -70,15 +66,50 @@ export const feedRoutes = new Elysia({ prefix: '/api' })
       }
     })
 
-    // Boost matching categories for personalized feed
+    // Multi-signal personalization + top-N shuffle for variety.
+    // Articles in the top 2x limit (by score) are shuffled so the same high-scored
+    // article doesn't always lead. Lower-scored articles stay ordered so pagination
+    // is stable. Shuffle only on first page (when no cursor) to keep refresh
+    // experience consistent with paginated scrolling.
     let sortedArticles = articles
-    if (topCategories.length > 0) {
+    if (userContext) {
       sortedArticles = [...articles].sort((a, b) => {
-        const aMatch = a.category && topCategories.includes(a.category) ? 1 : 0
-        const bMatch = b.category && topCategories.includes(b.category) ? 1 : 0
-        if (aMatch !== bMatch) return bMatch - aMatch
+        const sa = scoreArticle(
+          {
+            id: a.id,
+            category: a.category,
+            country: a.country,
+            createdAt: a.createdAt,
+            likes24h: a._count.likes,
+          },
+          userContext,
+        )
+        const sb = scoreArticle(
+          {
+            id: b.id,
+            category: b.category,
+            country: b.country,
+            createdAt: b.createdAt,
+            likes24h: b._count.likes,
+          },
+          userContext,
+        )
+        if (sb !== sa) return sb - sa
         return b.createdAt.getTime() - a.createdAt.getTime()
       })
+
+      if (!decodedCursor) {
+        const shuffleCutoff = Math.min(sortedArticles.length, limit * 2)
+        const topPortion = sortedArticles.slice(0, shuffleCutoff)
+        const bottomPortion = sortedArticles.slice(shuffleCutoff)
+        for (let i = topPortion.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1))
+          const tmp = topPortion[i]!
+          topPortion[i] = topPortion[j]!
+          topPortion[j] = tmp
+        }
+        sortedArticles = [...topPortion, ...bottomPortion]
+      }
     }
 
     const hasMore = sortedArticles.length > limit
@@ -115,6 +146,7 @@ export const feedRoutes = new Elysia({ prefix: '/api' })
       sourceName: a.sourceName,
       category: a.category,
       language: a.language,
+      country: a.country,
       publishedAt: a.publishedAt,
       likesCount: a._count.likes,
       isLiked: userLikes.has(a.id),
@@ -141,6 +173,7 @@ export const feedRoutes = new Elysia({ prefix: '/api' })
       cursor: t.Optional(t.String()),
       category: t.Optional(t.String()),
       language: t.Optional(t.String()),
+      country: t.Optional(t.String()),
       personalized: t.Optional(t.String()),
     })
   })

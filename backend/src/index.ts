@@ -10,6 +10,7 @@ import { aiRoutes } from './routes/ai'
 import { adminRoutes } from './routes/admin'
 import { analyticsRoutes } from './routes/analytics'
 import { bookmarkFolderRoutes } from './routes/bookmark-folders'
+import { userRoutes } from './routes/user'
 import { syncNewsJob } from './jobs/sync-news'
 import { readFileSync, existsSync } from 'fs'
 import { join } from 'path'
@@ -61,6 +62,7 @@ const app = new Elysia()
   .use(adminRoutes)
   .use(analyticsRoutes)
   .use(bookmarkFolderRoutes)
+  .use(userRoutes)
 
   .onError(({ code, error, set }) => {
     const msg = (error as any)?.message || String(error)

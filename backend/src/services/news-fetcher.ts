@@ -9,6 +9,7 @@ export interface RawArticle {
   source_id: string;
   category?: string[];
   language: string;
+  country?: string[];
 }
 
 export async function fetchLatestNews(language: 'en' | 'id' = 'en'): Promise<RawArticle[]> {
