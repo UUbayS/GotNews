@@ -9,45 +9,43 @@ datasource db {
 }
 
 model User {
-  id           String     @id @default(cuid())
-  name         String
-  username     String?    @unique
-  email        String     @unique
-  password     String                        // Hashed via Bun.password
-  role         String     @default("user")   // "user" | "admin"
-  avatarUrl    String?
-  preferences  String     @default("[]")     // JSON array of category names
-  dateOfBirth  String?
-  gender       String?
-  address      String?
-  lastLoginAt  DateTime?
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-
-  bookmarks        Bookmark[]
-  likes            Like[]
-  notifications    Notification[]
-  readingHistory   ReadingHistory[]
+  id             String           @id @default(cuid())
+  name           String
+  username       String?          @unique
+  email          String           @unique
+  password       String
+  role           String           @default("user")
+  avatarUrl      String?
+  preferences    String           @default("[]")
+  dateOfBirth    String?
+  gender         String?
+  address        String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  lastLoginAt    DateTime?
+  bookmarks      Bookmark[]
+  likes          Like[]
+  notifications  Notification[]
+  readingHistory ReadingHistory[]
 }
 
 model Article {
-  id              String     @id @default(cuid())
-  externalId      String     @unique
+  id              String                   @id @default(cuid())
+  externalId      String                   @unique
   title           String
   originalContent String?
   summary         String
-  aiSummary       String?
-  aiSummaryAt     DateTime?
   sourceUrl       String?
   sourceName      String?
   imageUrl        String?
   category        String?
-  language        String     @default("en")
+  language        String                   @default("en")
   publishedAt     DateTime?
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+  aiSummary       String?
+  aiSummaryAt     DateTime?
   searchVector    Unsupported("tsvector")?
-
   bookmarks       Bookmark[]
   likes           Like[]
   readingHistory  ReadingHistory[]
@@ -58,28 +56,27 @@ model Article {
 }
 
 model Bookmark {
-  id        String   @id @default(cuid())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
-  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
-  articleId String
-  createdAt DateTime @default(now())
-
-  @@unique([userId, articleId])       // User hanya bisa bookmark 1x per artikel
-  @@index([userId])
-
+  id          String               @id @default(cuid())
+  userId      String
+  articleId   String
+  createdAt   DateTime             @default(now())
+  article     Article              @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  user        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   folderItems BookmarkFolderItem[]
+
+  @@unique([userId, articleId])
+  @@index([userId])
 }
 
 model Like {
   id        String   @id @default(cuid())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
-  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
   articleId String
   createdAt DateTime @default(now())
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, articleId])       // User hanya bisa like 1x per artikel
+  @@unique([userId, articleId])
   @@index([userId])
 }
 
@@ -105,13 +102,13 @@ model NewsSource {
 
 model Notification {
   id        String   @id @default(cuid())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
   title     String
   message   String
-  type      String   @default("info")   // "info" | "like" | "bookmark" | "system"
+  type      String   @default("info")
   isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([userId, isRead])
@@ -123,33 +120,32 @@ model ReadingHistory {
   articleId    String
   readAt       DateTime @default(now())
   readProgress Float    @default(0)
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   article      Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, articleId])
   @@index([userId, readAt(sort: Desc)])
 }
 
 model BookmarkFolder {
-  id        String   @id @default(cuid())
+  id        String               @id @default(cuid())
   userId    String
   name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  items BookmarkFolderItem[]
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+  items     BookmarkFolderItem[]
 
   @@unique([userId, name])
   @@index([userId])
 }
 
 model BookmarkFolderItem {
-  id              String         @id @default(cuid())
-  folder          BookmarkFolder @relation(fields: [folderId], references: [id], onDelete: Cascade)
-  folderId        String
-  bookmark        Bookmark       @relation(fields: [bookmarkId], references: [id], onDelete: Cascade)
-  bookmarkId      String
-  createdAt       DateTime       @default(now())
+  id         String         @id @default(cuid())
+  folderId   String
+  bookmarkId String
+  createdAt  DateTime       @default(now())
+  bookmark   Bookmark       @relation(fields: [bookmarkId], references: [id], onDelete: Cascade)
+  folder     BookmarkFolder @relation(fields: [folderId], references: [id], onDelete: Cascade)
 
   @@unique([folderId, bookmarkId])
   @@index([folderId])
@@ -163,4 +159,3 @@ model SearchHistory {
 
   @@index([userId, createdAt(sort: Desc)])
 }
-

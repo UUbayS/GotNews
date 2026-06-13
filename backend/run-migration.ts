@@ -8,16 +8,16 @@ await client.connect()
 const sql = `
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
-ALTER TABLE "Article" ADD COLUMN IF NOT EXISTS search_vector tsvector;
+ALTER TABLE "Article" ADD COLUMN IF NOT EXISTS "searchVector" tsvector;
 
-UPDATE "Article" SET search_vector = 
+UPDATE "Article" SET "searchVector" = 
   setweight(to_tsvector('simple', coalesce(title, '')), 'A') ||
   setweight(to_tsvector('simple', coalesce(summary, '')), 'B') ||
   setweight(to_tsvector('simple', coalesce("originalContent", '')), 'C');
 
 CREATE OR REPLACE FUNCTION article_search_vector_trigger() RETURNS trigger AS $$
 BEGIN
-  NEW.search_vector := 
+  NEW."searchVector" := 
     setweight(to_tsvector('simple', coalesce(NEW.title, '')), 'A') ||
     setweight(to_tsvector('simple', coalesce(NEW.summary, '')), 'B') ||
     setweight(to_tsvector('simple', coalesce(NEW."originalContent", '')), 'C');
@@ -35,7 +35,7 @@ BEGIN
 END;
 $$;
 
-CREATE INDEX IF NOT EXISTS idx_article_search ON "Article" USING GIN(search_vector);
+CREATE INDEX IF NOT EXISTS idx_article_search ON "Article" USING GIN("searchVector");
 CREATE INDEX IF NOT EXISTS idx_article_title_trgm ON "Article" USING GIN(title gin_trgm_ops);
 `
 

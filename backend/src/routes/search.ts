@@ -96,7 +96,7 @@ export const searchRoutes = new Elysia({ prefix: '/api' })
     let p = 1
 
     // Full-text search using tsvector with ranking
-    conditions.push(`"search_vector" @@ plainto_tsquery('simple', $${p})`)
+    conditions.push(`"searchVector" @@ plainto_tsquery('simple', $${p})`)
     params.push(q)
     p++
 
@@ -138,7 +138,7 @@ export const searchRoutes = new Elysia({ prefix: '/api' })
         a."sourceUrl", a."sourceName", a."imageUrl", a."category", a."language",
         a."publishedAt", a."createdAt", a."updatedAt",
         COALESCE(lc.likes_count, 0)::int AS "likesCount",
-        ts_rank(a."search_vector", plainto_tsquery('simple', $${rankParam})) AS "rank"
+        ts_rank(a."searchVector", plainto_tsquery('simple', $${rankParam})) AS "rank"
       FROM "Article" a
       LEFT JOIN (
         SELECT "articleId", COUNT(*)::int AS likes_count
