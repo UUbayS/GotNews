@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import 'feed_screen.dart';
@@ -29,10 +30,34 @@ class _MainLayoutState extends State<MainLayout> {
     final auth = context.watch<AuthService>();
     final isAdmin = auth.isAdmin;
 
-    if (isAdmin) {
-      return _buildAdminLayout();
-    }
-    return _buildUserLayout();
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (!didPop) {
+          final shouldExit = await showDialog<bool>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const Text('Exit App'),
+              content: const Text('Are you sure you want to exit?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  child: const Text('Exit'),
+                ),
+              ],
+            ),
+          );
+          if (shouldExit == true) {
+            SystemNavigator.pop();
+          }
+        }
+      },
+      child: isAdmin ? _buildAdminLayout() : _buildUserLayout(),
+    );
   }
 
   Widget _buildAdminLayout() {
@@ -130,20 +155,20 @@ class _MainLayoutState extends State<MainLayout> {
         selectedItemColor: Theme.of(context).colorScheme.primary,
         unselectedItemColor: Colors.grey,
         showUnselectedLabels: true,
-        items: [
-          const BottomNavigationBarItem(
+        items: const [
+          BottomNavigationBarItem(
             icon: Icon(Icons.home_filled),
             label: 'Home',
           ),
-          const BottomNavigationBarItem(
+          BottomNavigationBarItem(
             icon: Icon(CupertinoIcons.compass),
             label: 'Explore',
           ),
-          const BottomNavigationBarItem(
+          BottomNavigationBarItem(
             icon: Icon(Icons.bookmark_border),
             label: 'Bookmark',
           ),
-          const BottomNavigationBarItem(
+          BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),
             label: 'Profile',
           ),

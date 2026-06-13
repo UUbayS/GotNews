@@ -16,29 +16,15 @@ class AuthService extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get lastError => _lastError;
 
-  AuthService();
+  AuthService() {
+    _init();
+  }
 
-  Future<void> _checkAuthStatus() async {
-    final token = await ApiClient.storage.read(key: 'accessToken');
-    if (token != null) {
-      try {
-        final response = await ApiClient.get('/auth/me');
-        if (response.statusCode == 200) {
-          final data = jsonDecode(response.body) as Map<String, dynamic>?;
-          if (data != null && data['user'] != null) {
-            _currentUser = User.fromJson(data['user']);
-          } else {
-            await logout();
-          }
-        } else {
-          await logout();
-        }
-      } catch (e) {
-        developer.log('Auth status check failed: $e', name: 'AuthService');
-      }
-    }
+  Future<void> _init() async {
+    _isLoading = true;
+    notifyListeners();
+    await checkSession();
     _isLoading = false;
-    _lastError = null;
     notifyListeners();
   }
 
