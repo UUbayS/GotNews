@@ -18,7 +18,16 @@ class AuthService extends ChangeNotifier {
   String? get lastError => _lastError;
   bool get isOnboardingComplete => _onboardingComplete;
 
-  AuthService();
+  AuthService() {
+    _isLoading = true;
+    _initialize();
+  }
+
+  Future<void> _initialize() async {
+    await checkSession();
+    _isLoading = false;
+    notifyListeners();
+  }
 
   Future<void> _loadOnboardingStatus() async {
     final userId = _currentUser?.id;
