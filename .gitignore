@@ -37,3 +37,6 @@ docs/compose/plans/2025-06-12-feed-ux-improvements.md
 *.log
 backend/out.log
 backend/err.log
+
+# Internal agent plans (not part of the app)
+.sisyphus/
