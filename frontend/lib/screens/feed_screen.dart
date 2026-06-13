@@ -122,22 +122,30 @@ class FeedScreenState extends State<FeedScreen> {
   @override
   Widget build(BuildContext context) {
     if (_items.isEmpty && _isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator(color: Colors.white)),
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+      return Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(
+            color: isDark ? Colors.white : Colors.black87,
+          ),
+        ),
       );
     }
 
     if (_items.isEmpty && _error != null) {
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+      final textColor = isDark ? Colors.white70 : Colors.black87;
+      final iconColor = isDark ? Colors.white54 : Colors.black54;
       return Scaffold(
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.wifi_off, color: Colors.white54, size: 48),
+              Icon(Icons.wifi_off, color: iconColor, size: 48),
               const SizedBox(height: 16),
               Text(
                 _error!,
-                style: const TextStyle(color: Colors.white70, fontSize: 16),
+                style: TextStyle(color: textColor, fontSize: 16),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
