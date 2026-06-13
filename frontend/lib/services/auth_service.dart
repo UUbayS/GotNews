@@ -33,7 +33,17 @@ class AuthService extends ChangeNotifier {
     notifyListeners();
   }
 
-  AuthService();
+  AuthService() {
+    _isLoading = true;
+    _initialize();
+  }
+
+  Future<void> _initialize() async {
+    await checkSession();
+    await _loadOnboardingStatus();
+    _isLoading = false;
+    notifyListeners();
+  }
 
   Future<void> _loadOnboardingStatus() async {
     final userId = _currentUser?.id;
