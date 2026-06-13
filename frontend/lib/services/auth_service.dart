@@ -25,6 +25,7 @@ class AuthService extends ChangeNotifier {
 
   Future<void> _initialize() async {
     await checkSession();
+    await _loadOnboardingStatus();
     _isLoading = false;
     notifyListeners();
   }
