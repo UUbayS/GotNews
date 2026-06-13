@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_client.dart';
 import '../services/auth_service.dart';
+import 'main_layout.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -71,13 +72,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('onboarding_complete_$userId', true);
 
-      // Notify AuthWrapper to re-check onboarding status
       if (mounted) {
         context.read<AuthService>().refresh();
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const MainLayout()),
+          (route) => false,
+        );
       }
-
-      // AuthWrapper will detect the change and show MainLayout
-      // No navigation needed here
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
