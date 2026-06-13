@@ -241,7 +241,7 @@ class FeedScreenState extends State<FeedScreen> {
                   ),
                 ),
                 child: Center(
-                  child: Icon(Icons.image_not_supported, color: Theme.of(context).textTheme.bodyLarge?.color?.withOpacity(0.24) ?? Colors.white24, size: 50),
+                  child: Icon(Icons.image_not_supported, color: Theme.of(context).textTheme.bodyLarge?.color?.withValues(alpha: 0.24) ?? Colors.white24, size: 50),
                 ),
               ),
             ),
@@ -270,7 +270,7 @@ class FeedScreenState extends State<FeedScreen> {
                 end: Alignment.bottomCenter,
                 colors: [
                   Colors.transparent,
-                  Colors.black.withOpacity(0.8),
+                  Colors.black.withValues(alpha: 0.8),
                 ],
               ),
             ),
@@ -288,7 +288,7 @@ class FeedScreenState extends State<FeedScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(

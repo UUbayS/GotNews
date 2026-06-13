@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/app_colors.dart';
 import 'package:provider/provider.dart';
 import '../services/admin_service.dart';
 import '../services/auth_service.dart';
@@ -170,7 +171,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: isAdmin ? Colors.amber.shade50 : const Color(0xFF2E65F3).withOpacity(0.05),
+                  color: isAdmin ? Colors.amber.shade50 : AppColors.primary.withValues(alpha: 0.05),
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
                 ),
                 child: Column(
@@ -179,7 +180,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                       onTap: () => _showFullPhoto(u.avatarUrl),
                       child: CircleAvatar(
                         radius: 36,
-                        backgroundColor: isAdmin ? Colors.amber.shade100 : const Color(0xFF2E65F3).withOpacity(0.15),
+                        backgroundColor: isAdmin ? Colors.amber.shade100 : AppColors.primary.withValues(alpha: 0.15),
                         backgroundImage: (u.avatarUrl != null && u.avatarUrl!.isNotEmpty)
                             ? NetworkImage(ApiClient.getAvatarUrl(u.avatarUrl))
                             : null,
@@ -187,7 +188,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                             ? Text(
                                 u.name.isNotEmpty ? u.name[0].toUpperCase() : '?',
                                 style: TextStyle(
-                                  color: isAdmin ? Colors.amber.shade800 : const Color(0xFF2E65F3),
+                                  color: isAdmin ? Colors.amber.shade800 : AppColors.primary,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 28,
                                 ),
@@ -228,12 +229,12 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF2E65F3).withOpacity(0.1),
+                              color: AppColors.primary.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: const Text(
                               'ANDA',
-                              style: TextStyle(color: Color(0xFF2E65F3), fontSize: 11, fontWeight: FontWeight.bold),
+                              style: TextStyle(color: AppColors.primary, fontSize: 11, fontWeight: FontWeight.bold),
                             ),
                           ),
                       ],
@@ -370,7 +371,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.06),
+        color: color.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -431,7 +432,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
               width: 32,
               height: 32,
               decoration: BoxDecoration(
-                color: const Color(0xFF10B981).withOpacity(0.1),
+                color: const Color(0xFF10B981).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(Icons.people, color: Color(0xFF10B981), size: 18),
@@ -449,7 +450,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.refresh, color: theme.textTheme.bodyLarge?.color?.withOpacity(0.54) ?? Colors.black54),
+            icon: Icon(Icons.refresh, color: theme.textTheme.bodyLarge?.color?.withValues(alpha: 0.54) ?? Colors.black54),
             onPressed: _fetchUsers,
           ),
         ],
@@ -479,7 +480,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                             border: Border.all(color: Theme.of(context).dividerColor),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.03),
+                                color: Colors.black.withValues(alpha: 0.03),
                                 blurRadius: 6,
                                 offset: const Offset(0, 2),
                               ),
@@ -491,7 +492,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                                 onTap: () => _showFullPhoto(u.avatarUrl),
                                 child: CircleAvatar(
                                   radius: 22,
-                                  backgroundColor: isAdmin ? Colors.amber.shade50 : const Color(0xFF2E65F3).withOpacity(0.1),
+                                  backgroundColor: isAdmin ? Colors.amber.shade50 : AppColors.primary.withValues(alpha: 0.1),
                                   backgroundImage: (u.avatarUrl != null && u.avatarUrl!.isNotEmpty)
                                       ? NetworkImage(ApiClient.getAvatarUrl(u.avatarUrl))
                                       : null,
@@ -499,7 +500,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                                       ? Text(
                                           u.name.isNotEmpty ? u.name[0].toUpperCase() : '?',
                                           style: TextStyle(
-                                            color: isAdmin ? Colors.amber.shade700 : const Color(0xFF2E65F3),
+                                            color: isAdmin ? Colors.amber.shade700 : AppColors.primary,
                                             fontWeight: FontWeight.bold,
                                             fontSize: 16,
                                           ),
@@ -555,12 +556,12 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                                       margin: const EdgeInsets.only(right: 8),
                                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFF2E65F3).withOpacity(0.1),
+                                        color: AppColors.primary.withValues(alpha: 0.1),
                                         borderRadius: BorderRadius.circular(4),
                                       ),
                                       child: const Text(
                                         'ANDA',
-                                        style: TextStyle(color: Color(0xFF2E65F3), fontSize: 9, fontWeight: FontWeight.bold),
+                                        style: TextStyle(color: AppColors.primary, fontSize: 9, fontWeight: FontWeight.bold),
                                       ),
                                     ),
                                   Icon(Icons.chevron_right, color: Colors.grey.shade400, size: 20),

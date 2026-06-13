@@ -24,6 +24,16 @@ class _MainLayoutState extends State<MainLayout> {
   final GlobalKey<BookmarkScreenState> _bookmarkKey = GlobalKey<BookmarkScreenState>();
   final GlobalKey<FeedScreenState> _feedKey = GlobalKey<FeedScreenState>();
 
+  void _onTabSelected(int index) {
+    if (index == 0) {
+      _feedKey.currentState?.refreshFeed();
+    }
+    if (index == 2) {
+      _bookmarkKey.currentState?.fetchBookmarks(showLoading: false);
+    }
+    setState(() => _currentIndex = index);
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthService>();
@@ -55,41 +65,34 @@ class _MainLayoutState extends State<MainLayout> {
         index: _currentIndex,
         children: adminScreens,
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Theme.of(context).bottomNavigationBarTheme.backgroundColor ?? Theme.of(context).scaffoldBackgroundColor,
-        selectedItemColor: Theme.of(context).colorScheme.primary,
-        unselectedItemColor: Colors.grey,
-        showUnselectedLabels: true,
-        selectedLabelStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
-        unselectedLabelStyle: const TextStyle(fontSize: 10),
-        elevation: 8,
-        items: const [
-          BottomNavigationBarItem(
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _currentIndex,
+        onDestinationSelected: (index) => setState(() => _currentIndex = index),
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        destinations: const [
+          NavigationDestination(
             icon: Icon(Icons.dashboard_outlined),
-            activeIcon: Icon(Icons.dashboard),
+            selectedIcon: Icon(Icons.dashboard),
             label: 'Dashboard',
           ),
-          BottomNavigationBarItem(
+          NavigationDestination(
             icon: Icon(Icons.people_outline),
-            activeIcon: Icon(Icons.people),
+            selectedIcon: Icon(Icons.people),
             label: 'Users',
           ),
-          BottomNavigationBarItem(
+          NavigationDestination(
             icon: Icon(Icons.article_outlined),
-            activeIcon: Icon(Icons.article),
+            selectedIcon: Icon(Icons.article),
             label: 'Artikel',
           ),
-          BottomNavigationBarItem(
+          NavigationDestination(
             icon: Icon(Icons.rss_feed_outlined),
-            activeIcon: Icon(Icons.rss_feed),
+            selectedIcon: Icon(Icons.rss_feed),
             label: 'Sumber',
           ),
-          BottomNavigationBarItem(
+          NavigationDestination(
             icon: Icon(Icons.settings_outlined),
-            activeIcon: Icon(Icons.settings),
+            selectedIcon: Icon(Icons.settings),
             label: 'Pengaturan',
           ),
         ],
@@ -114,37 +117,29 @@ class _MainLayoutState extends State<MainLayout> {
         index: _currentIndex,
         children: userScreens,
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          if (index == 0) {
-            _feedKey.currentState?.refreshFeed();
-          }
-          if (index == 2) {
-            _bookmarkKey.currentState?.fetchBookmarks(showLoading: false);
-          }
-          setState(() => _currentIndex = index);
-        },
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Theme.of(context).bottomNavigationBarTheme.backgroundColor ?? Theme.of(context).scaffoldBackgroundColor,
-        selectedItemColor: Theme.of(context).colorScheme.primary,
-        unselectedItemColor: Colors.grey,
-        showUnselectedLabels: true,
-        items: [
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.home_filled),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _currentIndex,
+        onDestinationSelected: _onTabSelected,
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home_filled),
             label: 'Home',
           ),
-          const BottomNavigationBarItem(
+          NavigationDestination(
             icon: Icon(CupertinoIcons.compass),
+            selectedIcon: Icon(CupertinoIcons.compass_fill),
             label: 'Explore',
           ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.bookmark_border),
+          NavigationDestination(
+            icon: Icon(Icons.bookmark_outline),
+            selectedIcon: Icon(Icons.bookmark),
             label: 'Bookmark',
           ),
-          const BottomNavigationBarItem(
+          NavigationDestination(
             icon: Icon(Icons.person_outline),
+            selectedIcon: Icon(Icons.person),
             label: 'Profile',
           ),
         ],

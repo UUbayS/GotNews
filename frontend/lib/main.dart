@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'core/app_theme.dart';
 import 'services/auth_service.dart';
 import 'services/preferences_service.dart';
 import 'services/local_notification_service.dart';
@@ -38,24 +39,8 @@ class GotNewsApp extends StatelessWidget {
         return MaterialApp(
           title: 'GotNews',
           debugShowCheckedModeBanner: false,
-          theme: ThemeData(
-            brightness: Brightness.light,
-            scaffoldBackgroundColor: Colors.white,
-            primaryColor: const Color(0xFF2E65F3),
-            colorScheme: const ColorScheme.light(
-              primary: Color(0xFF2E65F3),
-              secondary: Colors.grey,
-            ),
-          ),
-          darkTheme: ThemeData(
-            brightness: Brightness.dark,
-            scaffoldBackgroundColor: const Color(0xFF121212),
-            primaryColor: const Color(0xFF2E65F3),
-            colorScheme: const ColorScheme.dark(
-              primary: Color(0xFF2E65F3),
-              secondary: Colors.grey,
-            ),
-          ),
+          theme: AppTheme.light(),
+          darkTheme: AppTheme.dark(),
           themeMode: themeMode,
           home: const AuthWrapper(),
         );
@@ -91,7 +76,6 @@ class _AuthWrapperState extends State<AuthWrapper> {
       builder: (context, auth, _) {
         if (auth.isLoading) {
           return const Scaffold(
-            backgroundColor: Colors.white,
             body: Center(child: CircularProgressIndicator()),
           );
         }
@@ -107,7 +91,6 @@ class _AuthWrapperState extends State<AuthWrapper> {
           _onboardingComplete = false;
           _checkOnboarding(userId);
           return const Scaffold(
-            backgroundColor: Colors.white,
             body: Center(child: CircularProgressIndicator()),
           );
         }

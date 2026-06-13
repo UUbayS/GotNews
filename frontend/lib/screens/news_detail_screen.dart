@@ -210,8 +210,8 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
         height: 80,
         decoration: BoxDecoration(
           color: isSelected
-              ? theme.colorScheme.primary.withOpacity(0.1)
-              : Colors.grey.withOpacity(0.1),
+              ? theme.colorScheme.primary.withValues(alpha: 0.1)
+              : Colors.grey.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? theme.colorScheme.primary : Colors.grey.shade300,
@@ -327,7 +327,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
-                              color: Colors.blue.withOpacity(0.1),
+                              color: Colors.blue.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
@@ -414,9 +414,9 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                               width: double.infinity,
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: Colors.blue.withOpacity(0.05),
+                                color: Colors.blue.withValues(alpha: 0.05),
                                 borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: Colors.blue.withOpacity(0.2)),
+                                border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -438,7 +438,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                                         Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                           decoration: BoxDecoration(
-                                            color: Colors.green.withOpacity(0.1),
+                                            color: Colors.green.withValues(alpha: 0.1),
                                             borderRadius: BorderRadius.circular(10),
                                           ),
                                           child: const Text(

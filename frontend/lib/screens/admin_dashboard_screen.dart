@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/app_colors.dart';
 import '../services/admin_service.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
@@ -97,7 +98,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               width: 32,
               height: 32,
               decoration: const BoxDecoration(
-                color: Color(0xFF2E65F3),
+                color: AppColors.primary,
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.admin_panel_settings, color: Colors.white, size: 18),
@@ -130,7 +131,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF2E65F3),
+                backgroundColor: AppColors.primary,
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
@@ -178,7 +179,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   Widget _buildStatsGrid() {
     final stats = [
-      _StatItem('Users', _stats?['totalUsers']?.toString() ?? '0', Icons.people, const Color(0xFF2E65F3)),
+      _StatItem('Users', _stats?['totalUsers']?.toString() ?? '0', Icons.people, AppColors.primary),
       _StatItem('Articles', _stats?['totalArticles']?.toString() ?? '0', Icons.article, const Color(0xFF10B981)),
       _StatItem('Likes', _stats?['totalLikes']?.toString() ?? '0', Icons.favorite, const Color(0xFFEF4444)),
       _StatItem('Bookmarks', _stats?['totalBookmarks']?.toString() ?? '0', Icons.bookmark, const Color(0xFFF59E0B)),
@@ -205,7 +206,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             border: Border.all(color: Theme.of(context).dividerColor),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.04),
+                color: Colors.black.withValues(alpha: 0.04),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -220,7 +221,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  color: s.color.withOpacity(0.1),
+                  color: s.color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(s.icon, color: s.color, size: 18),
@@ -258,7 +259,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           title: 'Sinkronkan Berita',
           subtitle: 'Ambil berita terbaru dari semua sumber aktif',
           onTap: _isSyncing ? null : _triggerSync,
-          color: const Color(0xFF2E65F3),
+          color: AppColors.primary,
         ),
         const SizedBox(height: 10),
         _ActionCard(
@@ -359,7 +360,7 @@ class _ActionCard extends StatelessWidget {
             border: Border.all(color: Theme.of(context).dividerColor),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.03),
+                color: Colors.black.withValues(alpha: 0.03),
                 blurRadius: 6,
                 offset: const Offset(0, 2),
               ),
@@ -371,7 +372,7 @@ class _ActionCard extends StatelessWidget {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(icon, color: color, size: 22),

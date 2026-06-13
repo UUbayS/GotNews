@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import '../core/app_colors.dart';
 import '../services/news_service.dart';
+import '../widgets/empty_state.dart';
 import 'bookmark_folder_detail_screen.dart';
 
 class BookmarkFoldersScreen extends StatefulWidget {
@@ -70,7 +72,7 @@ class _BookmarkFoldersScreenState extends State<BookmarkFoldersScreen> {
                 }
               }
             },
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2E65F3)),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
             child: const Text('Create', style: TextStyle(color: Colors.white)),
           ),
         ],
@@ -104,25 +106,7 @@ class _BookmarkFoldersScreenState extends State<BookmarkFoldersScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _folders.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.folder_open, size: 64, color: Colors.grey.shade300),
-                      const SizedBox(height: 16),
-                      Text('No folders yet', style: TextStyle(fontSize: 18, color: Colors.grey.shade600)),
-                      const SizedBox(height: 8),
-                      Text('Create a folder to organize your bookmarks', style: TextStyle(color: Colors.grey.shade500)),
-                      const SizedBox(height: 16),
-                      ElevatedButton.icon(
-                        onPressed: _showCreateFolderDialog,
-                        icon: const Icon(Icons.add),
-                        label: const Text('Create Folder'),
-                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2E65F3)),
-                      ),
-                    ],
-                  ),
-                )
+              ? EmptyState.noFolders(onCreate: _showCreateFolderDialog)
               : RefreshIndicator(
                   onRefresh: _loadFolders,
                   child: ListView.builder(
@@ -148,10 +132,10 @@ class _BookmarkFoldersScreenState extends State<BookmarkFoldersScreen> {
                             width: 44,
                             height: 44,
                             decoration: BoxDecoration(
-                              color: const Color(0xFF2E65F3).withOpacity(0.1),
+                              color: AppColors.primary.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: const Icon(Icons.folder, color: Color(0xFF2E65F3)),
+                            child: const Icon(Icons.folder, color: AppColors.primary),
                           ),
                           title: Text(folder['name'], style: TextStyle(fontWeight: FontWeight.bold, color: textColor)),
                           subtitle: Text('${folder['count']} articles', style: TextStyle(color: Colors.grey.shade500)),

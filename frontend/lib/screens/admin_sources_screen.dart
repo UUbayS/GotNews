@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/app_colors.dart';
 import '../services/admin_service.dart';
 
 class AdminSourcesScreen extends StatefulWidget {
@@ -181,7 +182,7 @@ class _AdminSourcesScreenState extends State<AdminSourcesScreen> {
                 }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF2E65F3),
+                backgroundColor: AppColors.primary,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
               child: const Text('Simpan', style: TextStyle(color: Colors.white)),
@@ -277,7 +278,7 @@ class _AdminSourcesScreenState extends State<AdminSourcesScreen> {
                 }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF2E65F3),
+                backgroundColor: AppColors.primary,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
               child: const Text('Simpan', style: TextStyle(color: Colors.white)),
@@ -341,7 +342,7 @@ class _AdminSourcesScreenState extends State<AdminSourcesScreen> {
               width: 32,
               height: 32,
               decoration: BoxDecoration(
-                color: const Color(0xFF8B5CF6).withOpacity(0.1),
+                color: const Color(0xFF8B5CF6).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(Icons.rss_feed, color: Color(0xFF8B5CF6), size: 18),
@@ -359,14 +360,14 @@ class _AdminSourcesScreenState extends State<AdminSourcesScreen> {
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.refresh, color: theme.textTheme.bodyLarge?.color?.withOpacity(0.54) ?? Colors.black54),
+            icon: Icon(Icons.refresh, color: theme.textTheme.bodyLarge?.color?.withValues(alpha: 0.54) ?? Colors.black54),
             onPressed: _fetchSources,
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddSourceDialog,
-        backgroundColor: const Color(0xFF2E65F3),
+        backgroundColor: AppColors.primary,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         child: const Icon(Icons.add, color: Colors.white, size: 26),
       ),
@@ -392,7 +393,7 @@ class _AdminSourcesScreenState extends State<AdminSourcesScreen> {
                           border: Border.all(color: Theme.of(context).dividerColor),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.03),
+                              color: Colors.black.withValues(alpha: 0.03),
                               blurRadius: 6,
                               offset: const Offset(0, 2),
                             ),
@@ -405,7 +406,7 @@ class _AdminSourcesScreenState extends State<AdminSourcesScreen> {
                               height: 44,
                               decoration: BoxDecoration(
                                 color: active
-                                    ? const Color(0xFF10B981).withOpacity(0.1)
+                                    ? const Color(0xFF10B981).withValues(alpha: 0.1)
                                     : Theme.of(context).dividerColor,
                                 borderRadius: BorderRadius.circular(12),
                               ),
@@ -437,13 +438,13 @@ class _AdminSourcesScreenState extends State<AdminSourcesScreen> {
                                       Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                         decoration: BoxDecoration(
-                                          color: const Color(0xFF2E65F3).withOpacity(0.08),
+                                          color: AppColors.primary.withValues(alpha: 0.08),
                                           borderRadius: BorderRadius.circular(4),
                                         ),
                                         child: Text(
                                           ((s['language'] as String?) ?? 'en').toUpperCase(),
                                           style: const TextStyle(
-                                            color: Color(0xFF2E65F3),
+                                            color: AppColors.primary,
                                             fontSize: 9,
                                             fontWeight: FontWeight.bold,
                                           ),

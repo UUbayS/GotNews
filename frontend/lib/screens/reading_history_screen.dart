@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/news_item.dart';
 import '../services/news_service.dart';
+import '../widgets/empty_state.dart';
 import '../widgets/news_list_tile.dart';
 import 'news_detail_screen.dart';
 
@@ -106,24 +107,7 @@ class _ReadingHistoryScreenState extends State<ReadingHistoryScreen> {
     }
 
     if (_history.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.history, size: 64, color: Colors.grey.shade400),
-            const SizedBox(height: 16),
-            Text(
-              'No reading history yet',
-              style: TextStyle(fontSize: 18, color: Colors.grey.shade600),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Articles you read will appear here',
-              style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
-            ),
-          ],
-        ),
-      );
+      return EmptyState.noHistory();
     }
 
     return RefreshIndicator(

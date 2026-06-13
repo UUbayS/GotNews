@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/app_colors.dart';
 import 'package:provider/provider.dart';
 import '../services/admin_service.dart';
 import '../services/auth_service.dart';
@@ -151,7 +152,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                 border: Border.all(color: theme.dividerColor),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.03),
+                    color: Colors.black.withValues(alpha: 0.03),
                     blurRadius: 6,
                     offset: const Offset(0, 2),
                   ),
@@ -161,11 +162,11 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                 children: [
                   CircleAvatar(
                     radius: 28,
-                    backgroundColor: const Color(0xFF2E65F3).withOpacity(0.1),
+                    backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                     child: Text(
                       (user?.name != null && user!.name.isNotEmpty) ? user.name[0].toUpperCase() : '?',
                       style: const TextStyle(
-                        color: Color(0xFF2E65F3),
+                        color: AppColors.primary,
                         fontWeight: FontWeight.bold,
                         fontSize: 22,
                       ),
@@ -226,7 +227,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                 border: Border.all(color: theme.dividerColor),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.03),
+                    color: Colors.black.withValues(alpha: 0.03),
                     blurRadius: 6,
                     offset: const Offset(0, 2),
                   ),
@@ -239,10 +240,10 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF2E65F3).withOpacity(0.1),
+                        color: AppColors.primary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Icon(Icons.sync, color: Color(0xFF2E65F3), size: 20),
+                      child: const Icon(Icons.sync, color: AppColors.primary, size: 20),
                     ),
                     title: const Text(
                       'Sinkronkan Sekarang',
@@ -267,7 +268,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF10B981).withOpacity(0.1),
+                        color: const Color(0xFF10B981).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: const Icon(Icons.rss_feed, color: Color(0xFF10B981), size: 20),
@@ -301,7 +302,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                 border: Border.all(color: theme.dividerColor),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.03),
+                    color: Colors.black.withValues(alpha: 0.03),
                     blurRadius: 6,
                     offset: const Offset(0, 2),
                   ),
@@ -314,7 +315,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: Colors.grey.withOpacity(0.1),
+                        color: Colors.grey.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(Icons.info_outline, color: Colors.grey.shade600, size: 20),

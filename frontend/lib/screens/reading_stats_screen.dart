@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/app_colors.dart';
 import '../services/news_service.dart';
 
 class ReadingStatsScreen extends StatefulWidget {
@@ -83,7 +84,7 @@ class _ReadingStatsScreenState extends State<ReadingStatsScreen> {
         icon: Icons.article_outlined,
         label: 'Articles Read',
         value: '${_stats?['totalArticlesRead'] ?? 0}',
-        color: const Color(0xFF2E65F3),
+        color: AppColors.primary,
       ),
       _OverviewCard(
         icon: Icons.trending_up,
@@ -105,7 +106,7 @@ class _ReadingStatsScreenState extends State<ReadingStatsScreen> {
           margin: const EdgeInsets.symmetric(horizontal: 4),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: card.color.withOpacity(0.08),
+            color: card.color.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(14),
           ),
           child: Column(
@@ -152,7 +153,7 @@ class _ReadingStatsScreenState extends State<ReadingStatsScreen> {
                   child: LinearProgressIndicator(
                     value: fraction,
                     backgroundColor: Colors.grey.shade200,
-                    valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF2E65F3)),
+                    valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
                     minHeight: 12,
                   ),
                 ),
@@ -197,7 +198,7 @@ class _ReadingStatsScreenState extends State<ReadingStatsScreen> {
                 width: 24,
                 height: height.clamp(4.0, 100.0),
                 decoration: BoxDecoration(
-                  color: count > 0 ? const Color(0xFF2E65F3) : Colors.grey.shade200,
+                  color: count > 0 ? AppColors.primary : Colors.grey.shade200,
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),

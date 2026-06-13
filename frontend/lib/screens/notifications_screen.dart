@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import '../core/app_colors.dart';
 import '../services/api_client.dart';
+import '../widgets/empty_state.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -96,7 +98,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               onPressed: _markAllAsRead,
               child: const Text(
                 'Read All',
-                style: TextStyle(color: Color(0xFF2E65F3)),
+                style: const TextStyle(
+                  color: AppColors.primary,
+                ),
               ),
             ),
         ],
@@ -104,26 +108,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _notifications.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.notifications_none,
-                        size: 64,
-                        color: Colors.grey.shade400,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'No notifications yet',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey.shade500,
-                        ),
-                      ),
-                    ],
-                  ),
-                )
+              ? EmptyState.noNotifications()
               : RefreshIndicator(
                   onRefresh: _loadNotifications,
                   child: ListView.builder(
@@ -135,12 +120,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       return Container(
                         color: isRead
                             ? Colors.transparent
-                            : theme.colorScheme.primary.withOpacity(0.03),
+                            : theme.colorScheme.primary.withValues(alpha: 0.03),
                         child: ListTile(
                           leading: CircleAvatar(
                             backgroundColor: isRead
-                                ? Colors.grey.withOpacity(0.15)
-                                : theme.colorScheme.primary.withOpacity(0.1),
+                                ? Colors.grey.withValues(alpha: 0.15)
+                                : theme.colorScheme.primary.withValues(alpha: 0.1),
                             child: Icon(
                               _getNotificationIcon(notification['type']),
                               color: isRead

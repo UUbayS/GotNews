@@ -244,7 +244,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
               margin: const EdgeInsets.only(right: 8),
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: isError ? Colors.red.shade100 : theme.colorScheme.primary.withOpacity(0.1),
+                color: isError ? Colors.red.shade100 : theme.colorScheme.primary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -288,7 +288,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
               margin: const EdgeInsets.only(left: 8),
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withOpacity(0.1),
+                color: theme.colorScheme.primary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../core/app_colors.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../services/admin_service.dart';
 import '../models/news_item.dart';
@@ -280,7 +281,7 @@ class _AdminArticlesScreenState extends State<AdminArticlesScreen> {
                 }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF2E65F3),
+                backgroundColor: AppColors.primary,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
               child: const Text('Update', style: TextStyle(color: Colors.white)),
@@ -416,7 +417,7 @@ class _AdminArticlesScreenState extends State<AdminArticlesScreen> {
               width: 32,
               height: 32,
               decoration: BoxDecoration(
-                color: const Color(0xFFF59E0B).withOpacity(0.1),
+                color: const Color(0xFFF59E0B).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(Icons.article, color: Color(0xFFF59E0B), size: 18),
@@ -439,7 +440,7 @@ class _AdminArticlesScreenState extends State<AdminArticlesScreen> {
             tooltip: 'Bulk Delete',
           ),
           IconButton(
-            icon: Icon(Icons.refresh, color: theme.textTheme.bodyLarge?.color?.withOpacity(0.54) ?? Colors.black54),
+            icon: Icon(Icons.refresh, color: theme.textTheme.bodyLarge?.color?.withValues(alpha: 0.54) ?? Colors.black54),
             onPressed: _fetchArticles,
           ),
         ],
@@ -529,7 +530,7 @@ class _AdminArticlesScreenState extends State<AdminArticlesScreen> {
                 });
                 _fetchArticles();
               },
-              selectedColor: const Color(0xFF2E65F3),
+              selectedColor: AppColors.primary,
               labelStyle: TextStyle(
                 color: isSelected ? Colors.white : Colors.grey.shade700,
                 fontWeight: FontWeight.w600,
@@ -568,7 +569,7 @@ class _AdminArticlesScreenState extends State<AdminArticlesScreen> {
         border: Border.all(color: Theme.of(context).dividerColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -610,13 +611,13 @@ class _AdminArticlesScreenState extends State<AdminArticlesScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF2E65F3).withOpacity(0.08),
+                        color: AppColors.primary.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
                         (a.category ?? 'GENERAL').toUpperCase(),
                         style: const TextStyle(
-                          color: Color(0xFF2E65F3),
+                          color: AppColors.primary,
                           fontSize: 9,
                           fontWeight: FontWeight.bold,
                         ),
@@ -688,7 +689,7 @@ class _AdminArticlesScreenState extends State<AdminArticlesScreen> {
                 value: 'sync-ai',
                 child: Row(
                   children: [
-                    Icon(Icons.auto_awesome_outlined, color: Color(0xFF2E65F3), size: 18),
+                    Icon(Icons.auto_awesome_outlined, color: AppColors.primary, size: 18),
                     SizedBox(width: 8),
                     Text('Regen AI Summary'),
                   ],
@@ -773,13 +774,13 @@ class _AdminArticlesScreenState extends State<AdminArticlesScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF2E65F3).withOpacity(0.08),
+                          color: AppColors.primary.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
                           a.category!.toUpperCase(),
                           style: const TextStyle(
-                            color: Color(0xFF2E65F3),
+                            color: AppColors.primary,
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
                           ),
@@ -874,8 +875,8 @@ class _AdminArticlesScreenState extends State<AdminArticlesScreen> {
                             icon: const Icon(Icons.edit_outlined, size: 16),
                             label: const Text('Edit'),
                             style: OutlinedButton.styleFrom(
-                              foregroundColor: const Color(0xFF2E65F3),
-                              side: const BorderSide(color: Color(0xFF2E65F3)),
+                              foregroundColor: AppColors.primary,
+                              side: const BorderSide(color: AppColors.primary),
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                             ),
@@ -958,12 +959,12 @@ class _AdminArticlesScreenState extends State<AdminArticlesScreen> {
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              side: BorderSide(color: _currentPage > 1 ? const Color(0xFF2E65F3) : Theme.of(context).dividerColor),
+              side: BorderSide(color: _currentPage > 1 ? AppColors.primary : Theme.of(context).dividerColor),
             ),
             child: Text(
               'Prev',
               style: TextStyle(
-                color: _currentPage > 1 ? const Color(0xFF2E65F3) : Colors.grey,
+                color: _currentPage > 1 ? AppColors.primary : Colors.grey,
               ),
             ),
           ),
@@ -982,13 +983,13 @@ class _AdminArticlesScreenState extends State<AdminArticlesScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               side: BorderSide(
-                color: _currentPage < _totalPages ? const Color(0xFF2E65F3) : Theme.of(context).dividerColor,
+                color: _currentPage < _totalPages ? AppColors.primary : Theme.of(context).dividerColor,
               ),
             ),
             child: Text(
               'Next',
               style: TextStyle(
-                color: _currentPage < _totalPages ? const Color(0xFF2E65F3) : Colors.grey,
+                color: _currentPage < _totalPages ? AppColors.primary : Colors.grey,
               ),
             ),
           ),

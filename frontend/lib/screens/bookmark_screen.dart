@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../models/news_item.dart';
 import '../services/news_service.dart';
+import '../widgets/empty_state.dart';
 import '../widgets/news_list_tile.dart';
+import 'explore_screen.dart';
 
 class BookmarkScreen extends StatefulWidget {
   const BookmarkScreen({super.key});
@@ -124,24 +126,16 @@ class BookmarkScreenState extends State<BookmarkScreen> {
                 child: _isLoading
                     ? const Center(child: CircularProgressIndicator())
                     : displayItems.isEmpty
-                        ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.bookmark_border, size: 64, color: theme.dividerColor),
-                                const SizedBox(height: 16),
-                                Text(
-                                  isSearchActive ? 'No bookmarks match your search' : 'No bookmarks yet.',
-                                  style: TextStyle(color: Colors.grey.shade500, fontSize: 16),
+                        ? (isSearchActive
+                            ? EmptyState.noBookmarksSearch()
+                            : EmptyState.noBookmarks(
+                                onExplore: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const ExploreScreen(),
+                                  ),
                                 ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Tap the bookmark icon on any article to save it',
-                                  style: TextStyle(color: Colors.grey.shade400, fontSize: 13),
-                                ),
-                              ],
-                            ),
-                          )
+                              ))
                         : ListView.builder(
                             padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
                             itemCount: displayItems.length,

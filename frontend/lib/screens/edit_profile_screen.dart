@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import '../core/app_colors.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import '../main.dart' show themeNotifier;
@@ -243,7 +244,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             ElevatedButton(
               onPressed: _isLoading ? null : _saveProfile,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF2E65F3),
+                backgroundColor: AppColors.primary,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -334,7 +335,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               ),
               const SizedBox(height: 16),
               ListTile(
-                leading: const Icon(Icons.camera_alt, color: Color(0xFF2E65F3)),
+                leading: const Icon(Icons.camera_alt, color: AppColors.primary),
                 title: const Text('Ambil Foto'),
                 onTap: () {
                   Navigator.pop(context);
@@ -342,7 +343,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.photo_library, color: Color(0xFF2E65F3)),
+                leading: const Icon(Icons.photo_library, color: AppColors.primary),
                 title: const Text('Pilih dari Galeri'),
                 onTap: () {
                   Navigator.pop(context);
