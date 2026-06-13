@@ -1,7 +1,5 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_client.dart';
 import '../services/auth_service.dart';
 
@@ -56,6 +54,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   Future<void> _completeOnboarding() async {
     setState(() => _isSaving = true);
+    final authService = context.read<AuthService>();
 
     try {
       // Save preferences to server
@@ -66,18 +65,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         );
       }
 
-      // Mark onboarding as complete (per-user key)
-      final userId = context.read<AuthService>().currentUser?.id ?? 'unknown';
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('onboarding_complete_$userId', true);
-
-      // Notify AuthWrapper to re-check onboarding status
-      if (mounted) {
-        context.read<AuthService>().refresh();
-      }
-
-      // AuthWrapper will detect the change and show MainLayout
-      // No navigation needed here
+      // Mark onboarding as complete via AuthService (single source of truth)
+      // AuthWrapper will react to the notifyListeners() and show MainLayout
+      await authService.markOnboardingComplete();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

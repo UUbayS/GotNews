@@ -8,6 +8,7 @@ import 'dart:developer' as developer;
 class AuthService extends ChangeNotifier {
   User? _currentUser;
   bool _isLoading = false;
+  bool _onboardingComplete = false;
   String? _lastError;
 
   User? get currentUser => _currentUser;
@@ -15,8 +16,28 @@ class AuthService extends ChangeNotifier {
   bool get isAdmin => _currentUser?.role == 'admin';
   bool get isLoading => _isLoading;
   String? get lastError => _lastError;
+  bool get isOnboardingComplete => _onboardingComplete;
 
   AuthService();
+
+  Future<void> _loadOnboardingStatus() async {
+    final userId = _currentUser?.id;
+    if (userId == null) {
+      _onboardingComplete = false;
+      return;
+    }
+    final prefs = await SharedPreferences.getInstance();
+    _onboardingComplete = prefs.getBool('onboarding_complete_$userId') ?? false;
+  }
+
+  Future<void> markOnboardingComplete() async {
+    final userId = _currentUser?.id;
+    if (userId == null) return;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('onboarding_complete_$userId', true);
+    _onboardingComplete = true;
+    notifyListeners();
+  }
 
   Future<void> _checkAuthStatus() async {
     final token = await ApiClient.storage.read(key: 'accessToken');
@@ -86,6 +107,7 @@ class AuthService extends ChangeNotifier {
           }
           if (data['user'] != null) {
             _currentUser = User.fromJson(data['user']);
+            await _loadOnboardingStatus();
           }
           notifyListeners();
           return true;
@@ -144,6 +166,7 @@ class AuthService extends ChangeNotifier {
             _currentUser = User.fromJson(data['user']);
           }
           // Clear onboarding flag for new user (per-user key)
+          _onboardingComplete = false;
           final userId = _currentUser?.id ?? 'new';
           final prefs = await SharedPreferences.getInstance();
           await prefs.setBool('onboarding_complete_$userId', false);
@@ -234,6 +257,7 @@ class AuthService extends ChangeNotifier {
     await ApiClient.storage.delete(key: 'accessToken');
     await ApiClient.storage.delete(key: 'refreshToken');
     _currentUser = null;
+    _onboardingComplete = false;
     _lastError = null;
     notifyListeners();
   }

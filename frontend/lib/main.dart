@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'core/app_theme.dart';
 import 'services/auth_service.dart';
 import 'services/preferences_service.dart';
@@ -57,19 +56,6 @@ class AuthWrapper extends StatefulWidget {
 }
 
 class _AuthWrapperState extends State<AuthWrapper> {
-  bool _onboardingComplete = false;
-  String? _lastCheckedUserId;
-
-  Future<void> _checkOnboarding(String userId) async {
-    final prefs = await SharedPreferences.getInstance();
-    final complete = prefs.getBool('onboarding_complete_$userId') ?? false;
-    if (mounted) {
-      setState(() {
-        _onboardingComplete = complete;
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Consumer<AuthService>(
@@ -83,20 +69,8 @@ class _AuthWrapperState extends State<AuthWrapper> {
           return const LoginScreen();
         }
 
-        final userId = auth.currentUser?.id ?? '';
-        
-        // Reset state when user changes (login/logout)
-        if (_lastCheckedUserId != userId) {
-          _lastCheckedUserId = userId;
-          _onboardingComplete = false;
-          _checkOnboarding(userId);
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
-        
         // Skip onboarding for admin users
-        if (!auth.isAdmin && !_onboardingComplete) {
+        if (!auth.isAdmin && !auth.isOnboardingComplete) {
           return const OnboardingScreen();
         }
         return const MainLayout();
