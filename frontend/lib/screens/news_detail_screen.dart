@@ -28,6 +28,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
   double _fontSize = 16.0;
   final ScrollController _scrollController = ScrollController();
   double _readProgress = 0.0;
+  final Stopwatch _stopwatch = Stopwatch();
 
   @override
   void initState() {
@@ -36,7 +37,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
     _item.isRead = true;
     _scrollController.addListener(_onScroll);
     _loadFontSize();
-    // Only record reading history for logged-in users
+    _stopwatch.start();
     final auth = context.read<AuthService>();
     if (auth.isAuthenticated) {
       NewsService.recordReadingHistory(_item.id);
@@ -45,11 +46,15 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
 
   @override
   void dispose() {
+    _stopwatch.stop();
     _scrollController.removeListener(_onScroll);
-    // Only record reading history for logged-in users
     final auth = context.read<AuthService>();
     if (auth.isAuthenticated) {
-      NewsService.recordReadingHistory(_item.id, readProgress: _readProgress);
+      NewsService.recordReadingHistory(
+        _item.id,
+        readProgress: _readProgress,
+        durationSec: _stopwatch.elapsed.inSeconds,
+      );
     }
     _scrollController.dispose();
     super.dispose();

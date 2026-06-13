@@ -8,6 +8,7 @@ class NewsItem {
   final String? sourceUrl;
   final String? category;
   final String? language;
+  final String? country;
   final DateTime? publishedAt;
   
   int likesCount;
@@ -26,6 +27,7 @@ class NewsItem {
     this.sourceUrl,
     this.category,
     this.language,
+    this.country,
     this.publishedAt,
     this.likesCount = 0,
     this.bookmarksCount = 0,
@@ -45,6 +47,7 @@ class NewsItem {
       sourceUrl: json['sourceUrl'],
       category: json['category'],
       language: json['language'],
+      country: json['country'],
       publishedAt: json['publishedAt'] != null 
           ? DateTime.parse(json['publishedAt']) 
           : null,

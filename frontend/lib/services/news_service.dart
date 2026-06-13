@@ -154,10 +154,10 @@ class NewsService {
     throw Exception('Failed to generate summary (status ${response.statusCode})');
   }
 
-  static Future<void> recordReadingHistory(String articleId, {double readProgress = 0}) async {
+  static Future<void> recordReadingHistory(String articleId, {double readProgress = 0, int durationSec = 0}) async {
     final response = await ApiClient.post(
       '/reading-history',
-      body: {'articleId': articleId, 'readProgress': readProgress},
+      body: {'articleId': articleId, 'readProgress': readProgress, 'durationSec': durationSec},
     );
 
     if (response.statusCode != 200 && response.statusCode != 201) {
@@ -166,6 +166,49 @@ class NewsService {
         name: 'NewsService',
       );
     }
+  }
+
+  static Future<bool> updateLocation({
+    required double latitude,
+    required double longitude,
+    String? countryCode,
+    String? city,
+    required bool enabled,
+  }) async {
+    final response = await ApiClient.put('/user/location', body: {
+      'latitude': latitude,
+      'longitude': longitude,
+      if (countryCode != null) 'countryCode': countryCode,
+      if (city != null) 'city': city,
+      'enabled': enabled,
+    });
+    return response.statusCode >= 200 && response.statusCode < 300;
+  }
+
+  static Future<Map<String, dynamic>> fetchLocalFeed({
+    required String countryCode,
+    String? cursor,
+    int limit = 10,
+  }) async {
+    final queryParams = <String>[
+      'country=$countryCode',
+      'limit=$limit',
+      'personalized=false',
+    ];
+    if (cursor != null) queryParams.add('cursor=$cursor');
+    final response = await ApiClient.get('/feed?${queryParams.join('&')}');
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final itemsData = data['data'] as List;
+      final meta = data['meta'] as Map<String, dynamic>;
+      return {
+        'items': itemsData.map((i) => NewsItem.fromJson(i)).toList(),
+        'nextCursor': meta['nextCursor'],
+        'hasMore': meta['hasMore'] ?? false,
+      };
+    }
+    throw Exception('Failed to fetch local feed (${response.statusCode})');
   }
 
   static Future<List<NewsItem>> getReadingHistory({int limit = 20}) async {

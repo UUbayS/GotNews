@@ -7,6 +7,8 @@ import '../main.dart' show themeNotifier;
 import '../services/auth_service.dart';
 import '../services/api_client.dart';
 import '../services/preferences_service.dart';
+import '../services/location_service.dart';
+import '../services/news_service.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -25,7 +27,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   bool _isLoading = false;
   bool _isUploadingAvatar = false;
+  bool _locationBusy = false;
   String? _avatarUrl;
+  String? _locationLabel;
 
   @override
   void initState() {
@@ -40,6 +44,60 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       _addressController.text = user.address ?? '';
       _avatarUrl = user.avatarUrl;
     }
+    _loadLocationLabel();
+  }
+
+  Future<void> _loadLocationLabel() async {
+    final enabled = await LocationService.isEnabled();
+    final cached = await LocationService.getCached();
+    if (!mounted) return;
+    setState(() {
+      _locationLabel = enabled && cached != null
+          ? '${cached.city ?? cached.countryCode ?? "Lokasi aktif"}'
+          : 'Tidak aktif';
+    });
+  }
+
+  Future<void> _refreshLocation() async {
+    setState(() => _locationBusy = true);
+    final data = await LocationService.getCurrent();
+    if (data == null) {
+      setState(() => _locationBusy = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Gagal mendapatkan lokasi')),
+        );
+      }
+      return;
+    }
+    await NewsService.updateLocation(
+      latitude: data.latitude,
+      longitude: data.longitude,
+      countryCode: data.countryCode,
+      city: data.city,
+      enabled: true,
+    );
+    await LocationService.setEnabled(true);
+    if (!mounted) return;
+    setState(() {
+      _locationBusy = false;
+      _locationLabel = data.city ?? data.countryCode ?? 'Lokasi aktif';
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Lokasi diperbarui')),
+    );
+  }
+
+  Future<void> _disableLocation() async {
+    await NewsService.updateLocation(
+      latitude: 0, longitude: 0, enabled: false,
+    );
+    await LocationService.clear();
+    if (!mounted) return;
+    setState(() => _locationLabel = 'Tidak aktif');
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Lokasi dimatikan')),
+    );
   }
 
   void _saveProfile() async {
@@ -238,7 +296,60 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 );
               },
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 24),
+
+            // Location Section
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardColor,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.location_on, color: Colors.blue),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Lokasi',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                      const Spacer(),
+                      if (_locationBusy)
+                        const SizedBox(
+                          width: 16, height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(_locationLabel ?? '-', style: const TextStyle(color: Colors.grey)),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _locationBusy ? null : _refreshLocation,
+                          icon: const Icon(Icons.my_location, size: 18),
+                          label: const Text('Perbarui'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _locationBusy ? null : _disableLocation,
+                          icon: const Icon(Icons.location_off, size: 18),
+                          label: const Text('Matikan'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
 
             // Save Button
             ElevatedButton(
