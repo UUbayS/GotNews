@@ -10,6 +10,7 @@ class AuthService extends ChangeNotifier {
   bool _isLoading = false;
   bool _onboardingComplete = false;
   String? _lastError;
+  BanInfo? _banInfo;
 
   User? get currentUser => _currentUser;
   bool get isAuthenticated => _currentUser != null;
@@ -17,6 +18,20 @@ class AuthService extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get lastError => _lastError;
   bool get isOnboardingComplete => _onboardingComplete;
+  BanInfo? get banInfo => _banInfo;
+
+  void clearBan() {
+    if (_banInfo != null) {
+      _banInfo = null;
+      notifyListeners();
+    }
+  }
+
+  void _setBanInfo(BanInfo info) {
+    _banInfo = info;
+    _lastError = info.message;
+    notifyListeners();
+  }
 
   AuthService();
 
@@ -51,6 +66,10 @@ class AuthService extends ChangeNotifier {
           } else {
             await logout();
           }
+        } else if (response.statusCode == 403 &&
+            _isBanResponse(response.body)) {
+          _setBanInfo(_parseBanInfo(response.body)!);
+          await logout();
         } else {
           await logout();
         }
@@ -80,10 +99,13 @@ class AuthService extends ChangeNotifier {
           _currentUser = User.fromJson(data['user']);
           notifyListeners();
         }
+      } else if (response.statusCode == 403 &&
+          _isBanResponse(response.body)) {
+        _setBanInfo(_parseBanInfo(response.body)!);
+        await logout();
+        return;
       }
-      // Don't logout on non-200 — just keep existing session
     } catch (e) {
-      // Network error — keep existing session, don't logout
       developer.log('Session check failed: $e', name: 'AuthService');
     }
   }
@@ -114,21 +136,24 @@ class AuthService extends ChangeNotifier {
         }
       }
 
-      // Coba parse error message dari response body
+      if (response.statusCode == 403 && _isBanResponse(response.body)) {
+        _setBanInfo(_parseBanInfo(response.body)!);
+        return false;
+      }
+
       final body = jsonDecode(response.body) as Map<String, dynamic>?;
       final message = body?['message'];
       
-      // Map status codes to user-friendly messages
       if (response.statusCode == 401) {
-        _lastError = 'Email/username or password is incorrect.';
+        _lastError = 'Email/username atau password salah.';
       } else if (response.statusCode == 429) {
-        _lastError = 'Too many login attempts. Please wait a moment and try again.';
+        _lastError = 'Terlalu banyak percobaan login. Mohon tunggu sebentar.';
       } else if (response.statusCode == 404) {
-        _lastError = 'Account not found. Please check your email/username.';
+        _lastError = 'Akun tidak ditemukan. Periksa email/username Anda.';
       } else if (response.statusCode == 500) {
-        _lastError = 'Server error. Please try again later.';
+        _lastError = 'Server error. Silakan coba lagi nanti.';
       } else {
-        _lastError = message ?? 'Login failed. Please check your credentials.';
+        _lastError = message ?? 'Login gagal. Periksa kredensial Anda.';
       }
     } catch (e) {
       _lastError = 'Unable to connect to server. Please check your internet connection.';
@@ -165,7 +190,6 @@ class AuthService extends ChangeNotifier {
           if (data['user'] != null) {
             _currentUser = User.fromJson(data['user']);
           }
-          // Clear onboarding flag for new user (per-user key)
           _onboardingComplete = false;
           final userId = _currentUser?.id ?? 'new';
           final prefs = await SharedPreferences.getInstance();
@@ -175,24 +199,28 @@ class AuthService extends ChangeNotifier {
         }
       }
 
+      if (response.statusCode == 403 && _isBanResponse(response.body)) {
+        _setBanInfo(_parseBanInfo(response.body)!);
+        return false;
+      }
+
       final body = jsonDecode(response.body) as Map<String, dynamic>?;
       final message = body?['message'];
       
-      // Map status codes to user-friendly messages
       if (response.statusCode == 409) {
         if (message?.contains('Email') ?? false) {
-          _lastError = 'This email is already registered. Please use a different email or try logging in.';
+          _lastError = 'Email sudah terdaftar. Gunakan email lain atau coba login.';
         } else if (message?.contains('Username') ?? false) {
-          _lastError = 'This username is already taken. Please choose a different username.';
+          _lastError = 'Username sudah dipakai. Pilih username lain.';
         } else {
-          _lastError = 'Account already exists. Please try logging in.';
+          _lastError = 'Akun sudah ada. Silakan login.';
         }
       } else if (response.statusCode == 429) {
-        _lastError = 'Too many registration attempts. Please wait a moment and try again.';
+        _lastError = 'Terlalu banyak percobaan registrasi. Mohon tunggu sebentar.';
       } else if (response.statusCode == 500) {
-        _lastError = 'Server error. Please try again later.';
+        _lastError = 'Server error. Silakan coba lagi nanti.';
       } else {
-        _lastError = message ?? 'Registration failed. Please try again.';
+        _lastError = message ?? 'Registrasi gagal. Silakan coba lagi.';
       }
     } catch (e) {
       _lastError = 'Unable to connect to server. Please check your internet connection.';
@@ -281,5 +309,32 @@ class AuthService extends ChangeNotifier {
 
   void refresh() {
     notifyListeners();
+  }
+
+  bool _isBanResponse(String body) {
+    try {
+      final data = jsonDecode(body);
+      if (data is Map<String, dynamic>) {
+        final code = data['code'];
+        return code == 'ACCOUNT_BANNED' || code == 'EMAIL_BANNED';
+      }
+    } catch (_) {}
+    return false;
+  }
+
+  BanInfo? _parseBanInfo(String body) {
+    try {
+      final data = jsonDecode(body) as Map<String, dynamic>;
+      return BanInfo(
+        code: data['code'] as String? ?? 'ACCOUNT_BANNED',
+        message: data['message'] as String? ?? 'Akun Anda telah di-ban.',
+        reason: data['reason'] as String?,
+        expiresAt: data['expiresAt'] != null
+            ? DateTime.tryParse(data['expiresAt'].toString())
+            : null,
+      );
+    } catch (_) {
+      return null;
+    }
   }
 }

@@ -26,6 +26,11 @@ model User {
   city              String?
   locationUpdatedAt DateTime?
   locationEnabled   Boolean          @default(false)
+  isBanned          Boolean          @default(false)
+  bannedAt          DateTime?
+  bannedReason      String?
+  bannedBy          String?
+  banExpiresAt      DateTime?
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
   lastLoginAt       DateTime?
@@ -167,4 +172,16 @@ model SearchHistory {
   createdAt DateTime @default(now())
 
   @@index([userId, createdAt(sort: Desc)])
+}
+
+model BannedEmail {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  reason    String?
+  bannedBy  String?
+  bannedAt  DateTime  @default(now())
+  expiresAt DateTime?
+
+  @@index([email])
+  @@index([expiresAt])
 }

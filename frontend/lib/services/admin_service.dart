@@ -62,6 +62,28 @@ class AdminService {
     throw Exception(_parseError(response.body));
   }
 
+  static Future<bool> banUser(String userId, {String? reason, String? duration}) async {
+    final response = await ApiClient.put(
+      '/admin/users/$userId/ban',
+      body: {
+        if (reason != null && reason.isNotEmpty) 'reason': reason,
+        if (duration != null) 'duration': duration,
+      },
+    );
+    if (response.statusCode == 200) {
+      return true;
+    }
+    throw Exception(_parseError(response.body));
+  }
+
+  static Future<bool> unbanUser(String userId) async {
+    final response = await ApiClient.put('/admin/users/$userId/unban');
+    if (response.statusCode == 200) {
+      return true;
+    }
+    throw Exception(_parseError(response.body));
+  }
+
   // Articles management
   static Future<Map<String, dynamic>> fetchArticles({
     int limit = 20,

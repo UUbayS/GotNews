@@ -70,6 +70,10 @@ export const adminRoutes = new Elysia({ prefix: '/api/admin' })
           role: true,
           avatarUrl: true,
           createdAt: true,
+          isBanned: true,
+          bannedAt: true,
+          bannedReason: true,
+          banExpiresAt: true,
           _count: {
             select: {
               bookmarks: true,
@@ -83,6 +87,149 @@ export const adminRoutes = new Elysia({ prefix: '/api/admin' })
       console.error('Failed to list users:', e)
       set.status = 500
       return { message: 'Internal server error' }
+    }
+  }, {
+    requireAdmin: true
+  })
+
+  // 1b. PUT /api/admin/users/:id/ban - Ban user (with optional duration + email blacklist sync)
+  .put('/users/:id/ban', async ({ params, body, set, user }) => {
+    try {
+      const { id } = params
+      const { reason, duration } = body as { reason?: string; duration?: string }
+
+      if (!user || user.id === id) {
+        set.status = 400
+        return { message: 'Anda tidak dapat mem-ban akun Anda sendiri' }
+      }
+
+      const target = await prisma.user.findUnique({ where: { id } })
+      if (!target) {
+        set.status = 404
+        return { message: 'User tidak ditemukan' }
+      }
+
+      if (target.role === 'admin') {
+        set.status = 400
+        return { message: 'Tidak dapat mem-ban admin. Turunkan role-nya terlebih dahulu.' }
+      }
+
+      if (target.isBanned) {
+        set.status = 400
+        return { message: 'User sudah di-ban' }
+      }
+
+      let banExpiresAt: Date | null = null
+      if (duration && duration !== 'permanent') {
+        const days = parseInt(duration.replace('d', ''), 10)
+        if (isNaN(days) || days <= 0) {
+          set.status = 400
+          return { message: 'Durasi ban tidak valid. Gunakan 1d/7d/30d atau permanent.' }
+        }
+        banExpiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000)
+      }
+
+      const now = new Date()
+
+      const updated = await prisma.$transaction(async (tx) => {
+        const u = await tx.user.update({
+          where: { id },
+          data: {
+            isBanned: true,
+            bannedAt: now,
+            bannedReason: reason || null,
+            bannedBy: user.id,
+            banExpiresAt,
+          },
+          select: {
+            id: true, email: true, isBanned: true, bannedAt: true,
+            bannedReason: true, banExpiresAt: true
+          }
+        })
+
+        await tx.bannedEmail.upsert({
+          where: { email: target.email },
+          update: {
+            reason: reason || null,
+            bannedBy: user.id,
+            bannedAt: now,
+            expiresAt: banExpiresAt,
+          },
+          create: {
+            email: target.email,
+            reason: reason || null,
+            bannedBy: user.id,
+            bannedAt: now,
+            expiresAt: banExpiresAt,
+          }
+        })
+
+        return u
+      })
+
+      return {
+        success: true,
+        message: banExpiresAt
+          ? `User di-ban hingga ${banExpiresAt.toISOString()}`
+          : 'User di-ban secara permanen',
+        data: updated
+      }
+    } catch (e) {
+      console.error('Failed to ban user:', e)
+      set.status = 500
+      return { message: 'Gagal mem-ban user' }
+    }
+  }, {
+    body: t.Object({
+      reason: t.Optional(t.String()),
+      duration: t.Optional(t.Union([
+        t.Literal('1d'),
+        t.Literal('7d'),
+        t.Literal('30d'),
+        t.Literal('permanent'),
+      ]))
+    }),
+    requireAdmin: true
+  })
+
+  // 1c. PUT /api/admin/users/:id/unban - Unban user + remove from email blacklist
+  .put('/users/:id/unban', async ({ params, set }) => {
+    try {
+      const { id } = params
+
+      const target = await prisma.user.findUnique({ where: { id } })
+      if (!target) {
+        set.status = 404
+        return { message: 'User tidak ditemukan' }
+      }
+
+      if (!target.isBanned) {
+        set.status = 400
+        return { message: 'User tidak sedang di-ban' }
+      }
+
+      await prisma.$transaction(async (tx) => {
+        await tx.user.update({
+          where: { id },
+          data: {
+            isBanned: false,
+            bannedAt: null,
+            bannedReason: null,
+            bannedBy: null,
+            banExpiresAt: null,
+          }
+        })
+
+        await tx.bannedEmail.deleteMany({
+          where: { email: target.email }
+        })
+      })
+
+      return { success: true, message: 'User berhasil di-unban' }
+    } catch (e) {
+      console.error('Failed to unban user:', e)
+      set.status = 500
+      return { message: 'Gagal meng-unban user' }
     }
   }, {
     requireAdmin: true

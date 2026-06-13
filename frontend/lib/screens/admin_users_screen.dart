@@ -123,6 +123,167 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
     }
   }
 
+  Future<void> _banUser(String id, {String? reason, String? duration}) async {
+    try {
+      await AdminService.banUser(id, reason: reason, duration: duration);
+      if (mounted) {
+        final durLabel = duration == null || duration == 'permanent'
+            ? 'permanen'
+            : duration;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('User di-ban ($durLabel)'),
+            backgroundColor: Colors.orange.shade700,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+      _fetchUsers();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal mem-ban user: $e'),
+            backgroundColor: Colors.red.shade700,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _unbanUser(String id) async {
+    try {
+      await AdminService.unbanUser(id);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('User berhasil di-unban'),
+            backgroundColor: Colors.green.shade700,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+      _fetchUsers();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal meng-unban user: $e'),
+            backgroundColor: Colors.red.shade700,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  void _showBanDialog(User u) {
+    final reasonController = TextEditingController();
+    String selectedDuration = '7d';
+    final durations = {
+      '1d': '1 Hari',
+      '7d': '7 Hari',
+      '30d': '30 Hari',
+      'permanent': 'Permanen',
+    };
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setStateDialog) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(
+            children: [
+              Icon(Icons.block, color: Colors.orange.shade700, size: 22),
+              const SizedBox(width: 8),
+              const Text('Ban User', style: TextStyle(fontWeight: FontWeight.bold)),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Ban "${u.name}" (@${u.username ?? u.email})?',
+                  style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Durasi',
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  children: durations.entries.map((entry) {
+                    final selected = selectedDuration == entry.key;
+                    return ChoiceChip(
+                      label: Text(entry.value),
+                      selected: selected,
+                      onSelected: (_) {
+                        setStateDialog(() => selectedDuration = entry.key);
+                      },
+                      selectedColor: Colors.orange.shade100,
+                      labelStyle: TextStyle(
+                        color: selected ? Colors.orange.shade900 : Colors.grey.shade700,
+                        fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                      ),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Alasan (opsional)',
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: reasonController,
+                  maxLines: 3,
+                  maxLength: 200,
+                  decoration: InputDecoration(
+                    hintText: 'Misal: spam, konten tidak pantas, dll.',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    contentPadding: const EdgeInsets.all(12),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Batal', style: TextStyle(color: Colors.grey)),
+            ),
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.pop(context);
+                _banUser(
+                  u.id,
+                  reason: reasonController.text.trim().isEmpty
+                      ? null
+                      : reasonController.text.trim(),
+                  duration: selectedDuration,
+                );
+              },
+              icon: const Icon(Icons.block, size: 16),
+              label: const Text('Ban'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange.shade700,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _showConfirmDialog(String title, String message, VoidCallback onConfirm) {
     showDialog(
       context: context,
@@ -224,7 +385,20 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                               style: TextStyle(color: Colors.amber.shade800, fontSize: 11, fontWeight: FontWeight.bold),
                             ),
                           ),
-                        if (isAdmin && isCurrentUser) const SizedBox(width: 8),
+                        if (isAdmin && u.isBanned) const SizedBox(width: 6),
+                        if (u.isBanned)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.red.shade100,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Text(
+                              'BANNED',
+                              style: TextStyle(color: Color(0xFFB91C1C), fontSize: 11, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        if ((isAdmin || u.isBanned) && isCurrentUser) const SizedBox(width: 6),
                         if (isCurrentUser)
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -251,6 +425,26 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                     _buildDetailRow(Icons.email_outlined, 'Email', u.email),
                     const SizedBox(height: 12),
                     _buildDetailRow(Icons.calendar_today, 'Terdaftar', _formatDate(u.createdAt)),
+                    if (u.isBanned) ...[
+                      const SizedBox(height: 12),
+                      _buildDetailRow(
+                        Icons.block,
+                        'Status',
+                        u.banExpiresAt == null
+                            ? 'Banned permanen'
+                            : 'Banned hingga ${_formatDate(u.banExpiresAt)}',
+                        color: Colors.red.shade700,
+                      ),
+                    ],
+                    if (u.isBanned && u.bannedReason != null && u.bannedReason!.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      _buildDetailRow(
+                        Icons.info_outline,
+                        'Alasan',
+                        u.bannedReason!,
+                        color: Colors.red.shade700,
+                      ),
+                    ],
                     const SizedBox(height: 12),
                     Row(
                       children: [
@@ -281,44 +475,86 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
               if (!isCurrentUser)
                 Container(
                   padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                  child: Row(
+                  child: Column(
                     children: [
-                      if (!isAdmin)
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () {
-                              Navigator.pop(context);
-                              _promoteUser(u.id);
-                            },
-                            icon: const Icon(Icons.arrow_upward, size: 16),
-                            label: const Text('Promote'),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.green,
-                              side: const BorderSide(color: Colors.green),
-                              padding: const EdgeInsets.symmetric(vertical: 10),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      Row(
+                        children: [
+                          if (!isAdmin)
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                  _promoteUser(u.id);
+                                },
+                                icon: const Icon(Icons.arrow_upward, size: 16),
+                                label: const Text('Promote'),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: Colors.green,
+                                  side: const BorderSide(color: Colors.green),
+                                  padding: const EdgeInsets.symmetric(vertical: 10),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
-                      if (isAdmin)
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () {
-                              Navigator.pop(context);
-                              _demoteUser(u.id);
-                            },
-                            icon: const Icon(Icons.arrow_downward, size: 16),
-                            label: const Text('Demote'),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.orange,
-                              side: const BorderSide(color: Colors.orange),
-                              padding: const EdgeInsets.symmetric(vertical: 10),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          if (isAdmin)
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                  _demoteUser(u.id);
+                                },
+                                icon: const Icon(Icons.arrow_downward, size: 16),
+                                label: const Text('Demote'),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: Colors.orange,
+                                  side: const BorderSide(color: Colors.orange),
+                                  padding: const EdgeInsets.symmetric(vertical: 10),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
-                      const SizedBox(width: 12),
-                      Expanded(
+                          const SizedBox(width: 8),
+                          if (!u.isBanned)
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: isAdmin
+                                    ? null
+                                    : () {
+                                        Navigator.pop(context);
+                                        _showBanDialog(u);
+                                      },
+                                icon: const Icon(Icons.block, size: 16),
+                                label: const Text('Ban'),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: Colors.orange.shade700,
+                                  side: BorderSide(color: isAdmin ? Colors.grey.shade300 : Colors.orange.shade700),
+                                  padding: const EdgeInsets.symmetric(vertical: 10),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                ),
+                              ),
+                            ),
+                          if (u.isBanned)
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                  _unbanUser(u.id);
+                                },
+                                icon: const Icon(Icons.lock_open, size: 16),
+                                label: const Text('Unban'),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: Colors.green.shade700,
+                                  side: BorderSide(color: Colors.green.shade700),
+                                  padding: const EdgeInsets.symmetric(vertical: 10),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: double.infinity,
                         child: ElevatedButton.icon(
                           onPressed: () {
                             Navigator.pop(context);
@@ -329,7 +565,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                             );
                           },
                           icon: const Icon(Icons.delete_outline, size: 16),
-                          label: const Text('Hapus'),
+                          label: const Text('Hapus User'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.red,
                             foregroundColor: Colors.white,
@@ -348,10 +584,10 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
     );
   }
 
-  Widget _buildDetailRow(IconData icon, String label, String value) {
+  Widget _buildDetailRow(IconData icon, String label, String value, {Color? color}) {
     return Row(
       children: [
-        Icon(icon, size: 18, color: Colors.grey.shade500),
+        Icon(icon, size: 18, color: color ?? Colors.grey.shade500),
         const SizedBox(width: 10),
         Expanded(
           child: Column(
@@ -359,7 +595,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
             children: [
               Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
               const SizedBox(height: 2),
-              Text(value, style: TextStyle(fontSize: 14, color: Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black87, fontWeight: FontWeight.w500)),
+              Text(value, style: TextStyle(fontSize: 14, color: color ?? Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black87, fontWeight: FontWeight.w500)),
             ],
           ),
         ),
@@ -526,15 +762,15 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                     const SizedBox(height: 2),
-                                    Text(
-                                      u.name,
-                                      style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ],
-                                ),
-                              ),
+                    Text(
+                      u.name,
+                      style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
                               Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
@@ -549,6 +785,19 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                                       child: Text(
                                         'ADMIN',
                                         style: TextStyle(color: Colors.amber.shade800, fontSize: 9, fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                  if (u.isBanned)
+                                    Container(
+                                      margin: const EdgeInsets.only(right: 8),
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: Colors.red.shade50,
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Text(
+                                        'BANNED',
+                                        style: TextStyle(color: Colors.red.shade800, fontSize: 9, fontWeight: FontWeight.bold),
                                       ),
                                     ),
                                   if (isCurrentUser)

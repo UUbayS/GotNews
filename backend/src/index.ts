@@ -12,6 +12,7 @@ import { analyticsRoutes } from './routes/analytics'
 import { bookmarkFolderRoutes } from './routes/bookmark-folders'
 import { userRoutes } from './routes/user'
 import { syncNewsJob } from './jobs/sync-news'
+import { cleanupExpiredBansJob } from './jobs/cleanup-bans'
 import { readFileSync, existsSync } from 'fs'
 import { join } from 'path'
 import { logger } from './lib/logger'
@@ -49,6 +50,17 @@ const app = new Elysia()
       pattern: '0 * * * *',
       run: async () => {
         await cleanupExpiredTokens()
+      }
+    })
+  )
+
+  // Cron Job: Lift expired temp bans every 15 minutes
+  .use(
+    cron({
+      name: 'cleanup-bans',
+      pattern: '*/15 * * * *',
+      run: async () => {
+        await cleanupExpiredBansJob()
       }
     })
   )

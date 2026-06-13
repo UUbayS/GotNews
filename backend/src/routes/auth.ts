@@ -28,6 +28,22 @@ export const authRoutes = new Elysia({ prefix: '/api/auth' })
       return { message: 'Username already taken' }
     }
 
+    const now = new Date()
+    const blacklisted = await prisma.bannedEmail.findFirst({
+      where: {
+        email,
+        OR: [{ expiresAt: null }, { expiresAt: { gt: now } }]
+      }
+    })
+    if (blacklisted) {
+      set.status = 403
+      return {
+        code: 'EMAIL_BANNED',
+        message: 'Email ini tidak dapat digunakan untuk registrasi.',
+        reason: blacklisted.reason ?? null,
+      }
+    }
+
     const hashedPassword = await password.hash(plainPassword)
     
     const user = await prisma.user.create({
@@ -66,6 +82,18 @@ export const authRoutes = new Elysia({ prefix: '/api/auth' })
     if (!user) {
       set.status = 401
       return { message: 'Invalid credentials' }
+    }
+
+    const now = new Date()
+    const banActive = user.isBanned && (!user.banExpiresAt || user.banExpiresAt > now)
+    if (banActive) {
+      set.status = 403
+      return {
+        code: 'ACCOUNT_BANNED',
+        message: 'Akun Anda telah di-ban.',
+        reason: user.bannedReason ?? null,
+        expiresAt: user.banExpiresAt ?? null,
+      }
     }
 
     const isValid = await password.verify(plainPassword, user.password)
@@ -120,6 +148,18 @@ export const authRoutes = new Elysia({ prefix: '/api/auth' })
       return { message: 'User not found' }
     }
 
+    const now = new Date()
+    const banActive = user.isBanned && (!user.banExpiresAt || user.banExpiresAt > now)
+    if (banActive) {
+      set.status = 403
+      return {
+        code: 'ACCOUNT_BANNED',
+        message: 'Akun Anda telah di-ban.',
+        reason: user.bannedReason ?? null,
+        expiresAt: user.banExpiresAt ?? null,
+      }
+    }
+
     const newAccessToken = await jwt.sign({ id: user.id, role: user.role })
     return { accessToken: newAccessToken }
   }, {
@@ -148,6 +188,9 @@ export const authRoutes = new Elysia({ prefix: '/api/auth' })
         gender: true,
         address: true,
         createdAt: true,
+        isBanned: true,
+        bannedReason: true,
+        banExpiresAt: true,
         _count: {
           select: { bookmarks: true, likes: true }
         }
@@ -157,6 +200,18 @@ export const authRoutes = new Elysia({ prefix: '/api/auth' })
     if (!userData) {
       set.status = 404
       return { message: 'User not found' }
+    }
+
+    const now = new Date()
+    const banActive = userData.isBanned && (!userData.banExpiresAt || userData.banExpiresAt > now)
+    if (banActive) {
+      set.status = 403
+      return {
+        code: 'ACCOUNT_BANNED',
+        message: 'Akun Anda telah di-ban.',
+        reason: userData.bannedReason ?? null,
+        expiresAt: userData.banExpiresAt ?? null,
+      }
     }
     
     return { user: userData }

@@ -11,6 +11,9 @@ class User {
   final int likesCount;
   final String? role;
   final DateTime? createdAt;
+  final bool isBanned;
+  final String? bannedReason;
+  final DateTime? banExpiresAt;
 
   User({
     required this.id,
@@ -25,6 +28,9 @@ class User {
     this.likesCount = 0,
     this.role,
     this.createdAt,
+    this.isBanned = false,
+    this.bannedReason,
+    this.banExpiresAt,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -41,6 +47,25 @@ class User {
       likesCount: json['_count']?['likes'] ?? 0,
       role: json['role'],
       createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt']) : null,
+      isBanned: json['isBanned'] ?? false,
+      bannedReason: json['bannedReason'],
+      banExpiresAt: json['banExpiresAt'] != null ? DateTime.tryParse(json['banExpiresAt']) : null,
     );
   }
+}
+
+class BanInfo {
+  final String code;
+  final String message;
+  final String? reason;
+  final DateTime? expiresAt;
+
+  const BanInfo({
+    required this.code,
+    required this.message,
+    this.reason,
+    this.expiresAt,
+  });
+
+  bool get isPermanent => expiresAt == null;
 }
