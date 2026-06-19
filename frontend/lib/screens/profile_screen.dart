@@ -54,15 +54,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         elevation: 0,
         title: Row(
           children: [
-            Container(
-              width: 30,
-              height: 30,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primary,
-                shape: BoxShape.circle,
+              Image.asset(
+                'assets/images/Icon.png',
+                width: 21,
+                height: 30,
               ),
-              child: const Icon(Icons.public, color: Colors.white, size: 18),
-            ),
             const SizedBox(width: 8),
             Text(
               'GotNews',

@@ -65,18 +65,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
             child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Logo Placeholder
+              // Logo
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Container(
-                    width: 50,
+                  Image.asset(
+                    'assets/images/Icon.png',
+                    width: 35,
                     height: 50,
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primary,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.public, color: Colors.white, size: 30),
                   ),
                   const SizedBox(width: 10),
                   Text(

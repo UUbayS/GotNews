@@ -158,14 +158,10 @@ class _ExploreScreenState extends State<ExploreScreen> {
         elevation: 0,
         title: Row(
           children: [
-            Container(
-              width: 30,
+            Image.asset(
+              'assets/images/Icon.png',
+              width: 21,
               height: 30,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primary,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.public, color: Colors.white, size: 18),
             ),
             const SizedBox(width: 8),
             Text(

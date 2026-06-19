@@ -194,14 +194,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
-            width: 120,
+          Image.asset(
+            'assets/images/Icon.png',
+            width: 84,
             height: 120,
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primary,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.public, color: Colors.white, size: 60),
           ),
           const SizedBox(height: 32),
           Text(
