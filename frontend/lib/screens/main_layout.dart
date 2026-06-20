@@ -14,7 +14,9 @@ import 'admin_sources_screen.dart';
 import 'admin_settings_screen.dart';
 
 class MainLayout extends StatefulWidget {
-  const MainLayout({super.key});
+  final bool isGuest;
+
+  const MainLayout({super.key, this.isGuest = false});
 
   @override
   State<MainLayout> createState() => _MainLayoutState();
@@ -60,6 +62,9 @@ class _MainLayoutState extends State<MainLayout> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.isGuest) {
+      return _buildGuestLayout();
+    }
     final auth = context.watch<AuthService>();
     final isAdmin = auth.isAdmin;
 
@@ -67,6 +72,53 @@ class _MainLayoutState extends State<MainLayout> {
       return _buildAdminLayout();
     }
     return _buildUserLayout();
+  }
+
+  Widget _buildGuestLayout() {
+    final guestScreens = [
+      FeedScreen(key: _feedKey),
+      const ProfileScreen(),
+    ];
+
+    if (_currentIndex >= guestScreens.length) {
+      _currentIndex = guestScreens.length - 1;
+    }
+
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _showExitDialog();
+      },
+      child: Scaffold(
+        body: IndexedStack(
+          index: _currentIndex,
+          children: guestScreens,
+        ),
+        bottomNavigationBar: NavigationBar(
+          selectedIndex: _currentIndex,
+          onDestinationSelected: (index) {
+            if (index == 0) {
+              _feedKey.currentState?.refreshFeed();
+            }
+            setState(() => _currentIndex = index);
+          },
+          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(Icons.home_outlined),
+              selectedIcon: Icon(Icons.home_filled),
+              label: 'Home',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.person_outline),
+              selectedIcon: Icon(Icons.person),
+              label: 'Profile',
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildAdminLayout() {

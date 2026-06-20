@@ -9,6 +9,7 @@ import '../services/cache_service.dart';
 import '../services/local_notification_service.dart';
 import '../services/location_service.dart';
 import '../widgets/location_prompt_dialog.dart';
+import '../widgets/login_prompt_dialog.dart';
 import '../screens/news_detail_screen.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -56,6 +57,10 @@ class FeedScreenState extends State<FeedScreen> {
     }
   }
 
+  static const int _guestLimit = 3;
+
+  bool get _isGuest => !context.read<AuthService>().isAuthenticated;
+
   Future<void> refreshFeed() async {
     setState(() {
       _error = null;
@@ -63,15 +68,18 @@ class FeedScreenState extends State<FeedScreen> {
     try {
       _items.clear();
       _nextCursor = null;
-      _hasMore = true;
+      final guest = _isGuest;
+      _hasMore = !guest;
       final result = await NewsService.fetchFeed(
         cursor: null,
-        personalized: true,
+        personalized: !guest,
+        limit: guest ? _guestLimit : 10,
       );
+      final fetched = (result['items'] as List).cast<NewsItem>();
       setState(() {
-        _items.addAll(result['items']);
-        _nextCursor = result['nextCursor'];
-        _hasMore = result['hasMore'];
+        _items.addAll(guest ? fetched.take(_guestLimit).toList() : fetched);
+        _nextCursor = guest ? null : result['nextCursor'];
+        _hasMore = guest ? false : result['hasMore'];
         _error = null;
       });
       CacheService.cacheFeed(_items);
@@ -86,6 +94,7 @@ class FeedScreenState extends State<FeedScreen> {
 
   Future<void> _fetchNextPage() async {
     if (_isLoading || !_hasMore) return;
+    if (_isGuest) return;
     setState(() {
       _isLoading = true;
       _error = null;
@@ -165,28 +174,33 @@ class FeedScreenState extends State<FeedScreen> {
     }
 
     return Scaffold(
-      body: RefreshIndicator(
-        onRefresh: refreshFeed,
-        color: Colors.white,
-        backgroundColor: Colors.black87,
-        displacement: 60,
-        child: PageView.builder(
-          controller: _pageController,
-          scrollDirection: Axis.vertical,
-          itemCount: _items.length + (_hasMore ? 1 : 0),
-          onPageChanged: (index) {
-            if (index >= _items.length - 2) {
-              _fetchNextPage();
-            }
-          },
-          itemBuilder: (context, index) {
-            if (index >= _items.length) {
-              return const Center(child: CircularProgressIndicator(color: Colors.white));
-            }
-            final item = _items[index];
-            return _buildNewsCard(item);
-          },
-        ),
+      body: Stack(
+        children: [
+          RefreshIndicator(
+            onRefresh: refreshFeed,
+            color: Colors.white,
+            backgroundColor: Colors.black87,
+            displacement: 60,
+            child: PageView.builder(
+              controller: _pageController,
+              scrollDirection: Axis.vertical,
+              itemCount: _items.length + (_hasMore ? 1 : 0),
+              onPageChanged: (index) {
+                if (index >= _items.length - 2) {
+                  _fetchNextPage();
+                }
+              },
+              itemBuilder: (context, index) {
+                if (index >= _items.length) {
+                  return const Center(child: CircularProgressIndicator(color: Colors.white));
+                }
+                final item = _items[index];
+                return _buildNewsCard(item);
+              },
+            ),
+          ),
+          if (_isGuest) const Positioned(top: 0, left: 0, right: 0, child: SafeArea(child: _GuestBanner())),
+        ],
       ),
     );
   }
@@ -194,6 +208,13 @@ class FeedScreenState extends State<FeedScreen> {
   Widget _buildNewsCard(NewsItem item) {
     return GestureDetector(
       onTap: () {
+        if (!context.read<AuthService>().isAuthenticated) {
+          LoginPromptDialog.show(
+            context,
+            message: 'Login untuk membaca berita lengkap dan akses fitur lainnya.',
+          );
+          return;
+        }
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -458,6 +479,58 @@ class FeedScreenState extends State<FeedScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _GuestBanner extends StatelessWidget {
+  const _GuestBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+      child: Material(
+        color: Colors.black.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(24),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(24),
+          onTap: () {
+            LoginPromptDialog.show(
+              context,
+              message: 'Login untuk akses penuh: baca tanpa batas, bookmark, AI summary, dan lainnya.',
+            );
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.person_outline, color: Colors.white, size: 16),
+                const SizedBox(width: 8),
+                const Flexible(
+                  child: Text(
+                    'Mode Tamu · 3 berita pertama',
+                    style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Text(
+                    'Login',
+                    style: TextStyle(color: Colors.black87, fontSize: 11, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

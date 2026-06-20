@@ -7,6 +7,8 @@ import 'topics_screen.dart';
 import 'notifications_screen.dart';
 import 'reading_history_screen.dart';
 import 'reading_stats_screen.dart';
+import 'login_screen.dart';
+import 'signup_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -43,9 +45,147 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final user = context.watch<AuthService>().currentUser;
+    final auth = context.watch<AuthService>();
+    final user = auth.currentUser;
     final theme = Theme.of(context);
     final textColor = theme.textTheme.bodyLarge?.color ?? Colors.black87;
+
+    if (user == null) {
+      return Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        appBar: AppBar(
+          backgroundColor: theme.appBarTheme.backgroundColor ?? theme.scaffoldBackgroundColor,
+          elevation: 0,
+          title: Row(
+            children: [
+              Image.asset(
+                'assets/images/Icon.png',
+                width: 21,
+                height: 30,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'GotNews',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: textColor,
+                ),
+              ),
+            ],
+          ),
+        ),
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: 40),
+                Center(
+                  child: Container(
+                    width: 96,
+                    height: 96,
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(Icons.person_outline, size: 56, color: theme.colorScheme.primary),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'Selamat Datang di GotNews',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: textColor,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Login untuk membaca tanpa batas, menyimpan bookmark, dan menggunakan fitur AI.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey.shade600,
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 32),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const LoginScreen()),
+                    );
+                  },
+                  icon: const Icon(Icons.login, size: 18),
+                  label: const Text('Login'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: theme.colorScheme.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const SignUpScreen()),
+                    );
+                  },
+                  icon: const Icon(Icons.person_add_alt_1, size: 18),
+                  label: const Text('Buat Akun Baru'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: theme.colorScheme.primary,
+                    side: BorderSide(color: theme.colorScheme.primary),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+                const SizedBox(height: 40),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: theme.cardColor,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: theme.dividerColor),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.info_outline, size: 18, color: theme.colorScheme.primary),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Mode Tamu Aktif',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: textColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Anda saat ini menjelajah sebagai tamu. Beberapa fitur seperti membaca berita lengkap, menyimpan bookmark, menyukai berita, dan AI summary memerlukan akun.',
+                        style: TextStyle(fontSize: 13, color: Colors.grey.shade600, height: 1.5),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -78,10 +218,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             Center(
               child: GestureDetector(
-                onTap: () => _showFullPhoto(user?.avatarUrl),
+                onTap: () => _showFullPhoto(user.avatarUrl),
                 child: CircleAvatar(
                   radius: 40,
-                  backgroundImage: (user?.avatarUrl != null && user!.avatarUrl!.isNotEmpty)
+                  backgroundImage: (user.avatarUrl != null && user.avatarUrl!.isNotEmpty)
                       ? NetworkImage(ApiClient.getAvatarUrl(user.avatarUrl))
                       : const NetworkImage('https://via.placeholder.com/150'),
                   backgroundColor: Colors.grey.shade200,
@@ -91,14 +231,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const SizedBox(height: 16),
             Center(
               child: Text(
-                user?.name ?? 'Unknown',
+                user.name,
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: textColor),
               ),
             ),
             const SizedBox(height: 4),
             Center(
               child: Text(
-                user?.email ?? '',
+                user.email,
                 style: const TextStyle(fontSize: 14, color: Colors.grey),
               ),
             ),

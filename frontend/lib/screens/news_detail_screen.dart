@@ -292,6 +292,25 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
           ),
         ],
       ),
+      floatingActionButton: context.read<AuthService>().isAuthenticated
+          ? FloatingActionButton.extended(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => AiChatScreen(
+                      articleId: _item.id,
+                      articleTitle: _item.title,
+                    ),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.chat_bubble_outline),
+              label: const Text('Ask AI'),
+              backgroundColor: theme.colorScheme.secondary,
+              foregroundColor: Colors.white,
+            )
+          : null,
       body: Column(
         children: [
           LinearProgressIndicator(
@@ -401,17 +420,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                           ],
                         ),
                         const SizedBox(height: 24),
-                        Divider(color: theme.dividerColor, thickness: 1),
-                        const SizedBox(height: 20),
-                        Text(
-                          _item.originalContent ?? _item.summary,
-                          style: TextStyle(
-                            fontSize: _fontSize,
-                            color: theme.textTheme.bodyLarge?.color ?? Colors.black87,
-                            height: 1.6,
-                          ),
-                        ),
-                        const SizedBox(height: 40),
+                        // AI Summary section - placed above article body
                         if (_aiSummary != null)
                           Padding(
                             padding: const EdgeInsets.only(bottom: 20),
@@ -473,55 +482,42 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                               ),
                             ),
                           ),
-                        // AI Summary - only for logged-in users
+                        // AI Summary generate button - only for logged-in users
                         if (_aiSummary == null && context.read<AuthService>().isAuthenticated)
-                          SizedBox(
-                            width: double.infinity,
-                            child: OutlinedButton.icon(
-                              onPressed: _isSummarizing ? null : () => _generateSummary(),
-                              icon: _isSummarizing
-                                  ? const SizedBox(
-                                      width: 18,
-                                      height: 18,
-                                      child: CircularProgressIndicator(strokeWidth: 2),
-                                    )
-                                  : const Icon(Icons.auto_awesome, size: 18),
-                              label: Text(_isSummarizing ? 'Generating...' : 'Generate AI Summary'),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: theme.colorScheme.primary,
-                                side: BorderSide(color: theme.colorScheme.primary),
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 20),
+                            child: SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton.icon(
+                                onPressed: _isSummarizing ? null : () => _generateSummary(),
+                                icon: _isSummarizing
+                                    ? const SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child: CircularProgressIndicator(strokeWidth: 2),
+                                      )
+                                    : const Icon(Icons.auto_awesome, size: 18),
+                                label: Text(_isSummarizing ? 'Generating...' : 'Generate AI Summary'),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: theme.colorScheme.primary,
+                                  side: BorderSide(color: theme.colorScheme.primary),
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                ),
                               ),
                             ),
                           ),
-                        const SizedBox(height: 16),
-                        // AI Chat - only for logged-in users
-                        if (context.read<AuthService>().isAuthenticated)
-                          SizedBox(
-                            width: double.infinity,
-                            child: OutlinedButton.icon(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => AiChatScreen(
-                                      articleId: _item.id,
-                                      articleTitle: _item.title,
-                                    ),
-                                  ),
-                                );
-                              },
-                              icon: const Icon(Icons.chat_bubble_outline, size: 18),
-                              label: const Text('Ask AI about this article'),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: theme.colorScheme.secondary,
-                                side: BorderSide(color: theme.dividerColor),
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                              ),
-                            ),
+                        Divider(color: theme.dividerColor, thickness: 1),
+                        const SizedBox(height: 20),
+                        Text(
+                          _item.originalContent ?? _item.summary,
+                          style: TextStyle(
+                            fontSize: _fontSize,
+                            color: theme.textTheme.bodyLarge?.color ?? Colors.black87,
+                            height: 1.6,
                           ),
+                        ),
+                        const SizedBox(height: 40),
                         const SizedBox(height: 30),
                       ],
                     ),

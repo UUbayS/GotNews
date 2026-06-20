@@ -6,7 +6,6 @@ import 'services/auth_service.dart';
 import 'services/preferences_service.dart';
 import 'services/local_notification_service.dart';
 import 'screens/main_layout.dart';
-import 'screens/login_screen.dart';
 import 'screens/onboarding_screen.dart';
 
 final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.system);
@@ -72,7 +71,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
         }
 
         if (!auth.isAuthenticated) {
-          return const LoginScreen();
+          return const MainLayout(isGuest: true);
         }
 
         if (!auth.isAdmin && !auth.isOnboardingComplete) {
