@@ -292,6 +292,14 @@ class AuthService extends ChangeNotifier {
   }
 
   Future<void> logout() async {
+    // Try to revoke token on the server so it cannot be reused if leaked.
+    // Best-effort: any failure (network, 401, etc.) must not block local logout.
+    try {
+      await ApiClient.post('/auth/logout');
+    } catch (e) {
+      developer.log('Server logout failed (continuing with local cleanup): $e', name: 'AuthService');
+    }
+
     await ApiClient.storage.delete(key: 'accessToken');
     await ApiClient.storage.delete(key: 'refreshToken');
     _currentUser = null;
