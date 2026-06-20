@@ -9,6 +9,7 @@ import 'screens/main_layout.dart';
 import 'screens/onboarding_screen.dart';
 
 final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.system);
+final GlobalKey<NavigatorState> globalNavigatorKey = GlobalKey<NavigatorState>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,6 +26,8 @@ Future<void> main() async {
       child: const GotNewsApp(),
     ),
   );
+
+  NotificationService.startForegroundPolling();
 }
 
 class GotNewsApp extends StatelessWidget {
@@ -41,6 +44,7 @@ class GotNewsApp extends StatelessWidget {
           theme: AppTheme.light(),
           darkTheme: AppTheme.dark(),
           themeMode: themeMode,
+          navigatorKey: globalNavigatorKey,
           home: const AuthWrapper(),
         );
       },

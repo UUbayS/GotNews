@@ -1,8 +1,10 @@
 import { Elysia, t } from 'elysia'
 import { authPlugin } from '../middleware/auth'
 import { syncNewsJob } from '../jobs/sync-news'
+import { bookmarkReminderJob } from '../jobs/bookmark-reminders'
 import { prisma } from '../lib/prisma'
 import { summarizeArticle } from '../services/summarizer'
+import { notifyBreakingArticle, createNotification } from '../services/notifications'
 
 export const adminRoutes = new Elysia({ prefix: '/api/admin' })
   .use(authPlugin)
@@ -640,5 +642,109 @@ export const adminRoutes = new Elysia({ prefix: '/api/admin' })
       return { message: 'AI summarization failed' }
     }
   }, {
+    requireAdmin: true
+  })
+
+  // 15. PUT /api/admin/articles/:id/breaking - Toggle breaking-news flag and push to all users
+  .put('/articles/:id/breaking', async ({ params, body, set }) => {
+    try {
+      const { id } = params
+      const { isBreaking } = body
+      const article = await prisma.article.findUnique({ where: { id } })
+      if (!article) {
+        set.status = 404
+        return { message: 'Article not found' }
+      }
+
+      const updated = await prisma.article.update({
+        where: { id },
+        data: {
+          isBreaking,
+          breakingAt: isBreaking ? new Date() : null
+        }
+      })
+
+      if (isBreaking) {
+        await notifyBreakingArticle(article.id, article.title)
+      }
+
+      return {
+        success: true,
+        message: isBreaking ? 'Marked as breaking news' : 'Breaking flag removed',
+        data: updated
+      }
+    } catch (e) {
+      console.error('Failed to toggle breaking:', e)
+      set.status = 500
+      return { message: 'Internal server error' }
+    }
+  }, {
+    body: t.Object({
+      isBreaking: t.Boolean()
+    }),
+    requireAdmin: true
+  })
+
+  // 16. POST /api/admin/notifications/test - Trigger test notifications (admin self) for manual QA
+  .post('/notifications/test', async ({ body, set, user }) => {
+    try {
+      const { type, articleId, userId } = body
+      const targetUserId = userId ?? user?.id
+      if (!targetUserId) {
+        set.status = 401
+        return { message: 'Unauthorized' }
+      }
+
+      if (type === 'breaking') {
+        const article = articleId
+          ? await prisma.article.findUnique({ where: { id: articleId } })
+          : await prisma.article.findFirst({ orderBy: { createdAt: 'desc' } })
+
+        if (!article) {
+          set.status = 404
+          return { message: 'No article available. Sync news first or pass articleId.' }
+        }
+
+        await notifyBreakingArticle(article.id, article.title, userId)
+        return {
+          success: true,
+          message: userId
+            ? `Breaking push sent to user ${targetUserId}: "${article.title}"`
+            : `Breaking push queued to all users: "${article.title}"`,
+          articleId: article.id,
+          userId: targetUserId
+        }
+      }
+
+      if (type === 'reminder' || type === 'bookmark') {
+        await createNotification(
+          targetUserId,
+          'Belum Selesai Dibaca',
+          userId
+            ? 'Ini adalah notifikasi percobaan reminder yang dikirim admin ke akun Anda.'
+            : 'Ini adalah notifikasi percobaan untuk fitur pengingat bookmark.',
+          'reminder'
+        )
+        return { success: true, message: `Reminder sent to user ${targetUserId}.` }
+      }
+
+      if (type === 'run-job') {
+        const result = await bookmarkReminderJob()
+        return { success: true, message: `Bookmark job executed. Sent: ${result.sent}` }
+      }
+
+      set.status = 400
+      return { message: `Unknown type "${type}". Use: breaking | reminder | run-job.` }
+    } catch (e) {
+      console.error('Failed to send test notification:', e)
+      set.status = 500
+      return { message: 'Internal server error' }
+    }
+  }, {
+    body: t.Object({
+      type: t.String(),
+      articleId: t.Optional(t.String()),
+      userId: t.Optional(t.String())
+    }),
     requireAdmin: true
   })

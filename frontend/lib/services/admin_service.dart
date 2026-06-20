@@ -186,6 +186,34 @@ class AdminService {
     throw Exception(_parseError(response.body));
   }
 
+  static Future<bool> toggleBreaking(String articleId, bool isBreaking) async {
+    final response = await ApiClient.put(
+      '/admin/articles/$articleId/breaking',
+      body: {'isBreaking': isBreaking},
+    );
+    if (response.statusCode == 200) return true;
+    throw Exception(_parseError(response.body));
+  }
+
+  static Future<Map<String, dynamic>> sendTestNotification({
+    required String type,
+    String? articleId,
+    String? userId,
+  }) async {
+    final response = await ApiClient.post(
+      '/admin/notifications/test',
+      body: {
+        'type': type,
+        if (articleId != null) 'articleId': articleId,
+        if (userId != null) 'userId': userId,
+      },
+    );
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    }
+    throw Exception(_parseError(response.body));
+  }
+
   // Sources management
   static Future<List<Map<String, dynamic>>> fetchSources() async {
     final response = await ApiClient.get('/admin/sources');

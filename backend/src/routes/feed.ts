@@ -318,3 +318,25 @@ export const feedRoutes = new Elysia({ prefix: '/api' })
       language: t.Optional(t.String()),
     })
   })
+
+  .get('/articles/:id', async ({ params, set }) => {
+    try {
+      const article = await prisma.article.findUnique({
+        where: { id: params.id },
+        include: {
+          _count: { select: { likes: true, bookmarks: true } }
+        }
+      })
+      if (!article) {
+        set.status = 404
+        return { message: 'Article not found' }
+      }
+      return { data: article }
+    } catch (e) {
+      console.error('Failed to fetch article:', e)
+      set.status = 500
+      return { message: 'Internal server error' }
+    }
+  }, {
+    params: t.Object({ id: t.String() })
+  })

@@ -13,6 +13,7 @@ import { bookmarkFolderRoutes } from './routes/bookmark-folders'
 import { userRoutes } from './routes/user'
 import { syncNewsJob } from './jobs/sync-news'
 import { cleanupExpiredBansJob } from './jobs/cleanup-bans'
+import { bookmarkReminderJob } from './jobs/bookmark-reminders'
 import { readFileSync, existsSync } from 'fs'
 import { join } from 'path'
 import { logger } from './lib/logger'
@@ -61,6 +62,17 @@ const app = new Elysia()
       pattern: '*/15 * * * *',
       run: async () => {
         await cleanupExpiredBansJob()
+      }
+    })
+  )
+
+  // Cron Job: Bookmark follow-up reminders (daily at 09:00 server time)
+  .use(
+    cron({
+      name: 'bookmark-reminders',
+      pattern: '0 9 * * *',
+      run: async () => {
+        await bookmarkReminderJob()
       }
     })
   )

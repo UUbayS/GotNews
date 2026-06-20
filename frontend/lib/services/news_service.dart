@@ -4,6 +4,22 @@ import 'api_client.dart';
 import '../models/news_item.dart';
 
 class NewsService {
+  static Future<NewsItem> fetchArticleById(String id) async {
+    final response = await ApiClient.get('/articles/$id');
+    if (response.statusCode == 200) {
+      final body = jsonDecode(response.body) as Map<String, dynamic>?;
+      final data = body?['data'] as Map<String, dynamic>?;
+      if (data == null) {
+        throw Exception('Invalid response: data is null');
+      }
+      return NewsItem.fromJson(data);
+    }
+    if (response.statusCode == 404) {
+      throw Exception('Article not found');
+    }
+    throw Exception('Failed to fetch article (status ${response.statusCode})');
+  }
+
   static Future<Map<String, dynamic>> searchNews({
     required String query,
     String? cursor,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
 import 'package:provider/provider.dart';
+import '../models/user.dart';
 import '../services/admin_service.dart';
 import '../services/auth_service.dart';
 
@@ -13,7 +14,11 @@ class AdminSettingsScreen extends StatefulWidget {
 
 class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
   bool _isSyncing = false;
+  bool _isTestingNotification = false;
+  String? _testLastResult;
   Map<String, dynamic>? _stats;
+  String? _targetUserId;
+  String? _targetUserLabel;
 
   @override
   void initState() {
@@ -68,6 +73,154 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
       }
     } finally {
       setState(() => _isSyncing = false);
+    }
+  }
+
+  Future<void> _sendTestNotification(String type) async {
+    setState(() {
+      _isTestingNotification = true;
+      _testLastResult = null;
+    });
+    try {
+      final result = await AdminService.sendTestNotification(
+        type: type,
+        userId: _targetUserId,
+      );
+      if (mounted) {
+        setState(() {
+          _testLastResult = result['message']?.toString() ?? 'Sent';
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_testLastResult!),
+            backgroundColor: Colors.green.shade700,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _testLastResult = 'Gagal: $e';
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Test notifikasi gagal: $e'),
+            backgroundColor: Colors.red.shade700,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isTestingNotification = false);
+    }
+  }
+
+  Future<void> _pickTargetUser() async {
+    final adminEmail = context.read<AuthService>().currentUser?.email;
+    List<User> users;
+    try {
+      users = await AdminService.fetchUsers();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal memuat daftar user: $e')),
+        );
+      }
+      return;
+    }
+
+    if (!mounted) return;
+    final picked = await showModalBottomSheet<User>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (sheetContext) {
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.7,
+          maxChildSize: 0.9,
+          minChildSize: 0.4,
+          builder: (_, scrollController) {
+            return Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Pilih User Target',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(sheetContext).textTheme.bodyLarge?.color,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Notifikasi test akan dikirim ke user ini',
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                  ),
+                  const SizedBox(height: 12),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const CircleAvatar(
+                      backgroundColor: Colors.amber,
+                      child: Icon(Icons.admin_panel_settings, color: Colors.white, size: 20),
+                    ),
+                    title: const Text('Admin sendiri'),
+                    subtitle: Text(adminEmail ?? ''),
+                    onTap: () => Navigator.pop(sheetContext, null),
+                  ),
+                  const Divider(),
+                  Expanded(
+                    child: ListView.separated(
+                      controller: scrollController,
+                      itemCount: users.length,
+                      separatorBuilder: (_, __) => const Divider(height: 1),
+                      itemBuilder: (_, i) {
+                        final u = users[i];
+                        return ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: CircleAvatar(
+                            backgroundColor: u.isBanned ? Colors.red.shade100 : Colors.blue.shade100,
+                            child: Text(
+                              u.name.isNotEmpty ? u.name[0].toUpperCase() : '?',
+                              style: TextStyle(
+                                color: u.isBanned ? Colors.red : Colors.blue,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          title: Text(u.name),
+                          subtitle: Text('${u.email}${u.isBanned ? " • BANNED" : ""}'),
+                          trailing: u.role == 'admin'
+                              ? const Icon(Icons.admin_panel_settings, size: 16, color: Colors.amber)
+                              : null,
+                          onTap: () => Navigator.pop(sheetContext, u),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    if (picked != null && mounted) {
+      setState(() {
+        _targetUserId = picked.id;
+        _targetUserLabel = '${picked.name} (${picked.email})';
+      });
+    } else if (mounted) {
+      setState(() {
+        _targetUserId = null;
+        _targetUserLabel = 'Admin sendiri';
+      });
     }
   }
 
@@ -284,6 +437,149 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                     trailing: const Icon(Icons.chevron_right, color: Colors.grey),
                     onTap: () {},
                   ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            Text(
+              'Test Notifikasi',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.textTheme.bodyLarge?.color ?? Colors.black87),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              decoration: BoxDecoration(
+                color: theme.cardColor,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: theme.dividerColor),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  ListTile(
+                    leading: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.person_pin, color: AppColors.primary, size: 20),
+                    ),
+                    title: const Text(
+                      'User Target',
+                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                    ),
+                    subtitle: Text(
+                      _targetUserLabel ?? 'Admin sendiri',
+                      style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                    ),
+                    trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+                    onTap: _pickTargetUser,
+                  ),
+                  Divider(height: 1, color: theme.dividerColor),
+                  ListTile(
+                    leading: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.red.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.flash_on, color: Colors.red, size: 20),
+                    ),
+                    title: const Text(
+                      'Test Breaking News',
+                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                    ),
+                    subtitle: Text(
+                      'Kirim push breaking ke user target',
+                      style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                    ),
+                    trailing: _isTestingNotification
+                        ? const SizedBox(
+                            width: 20, height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.chevron_right, color: Colors.grey),
+                    onTap: _isTestingNotification ? null : () => _sendTestNotification('breaking'),
+                  ),
+                  Divider(height: 1, color: theme.dividerColor),
+                  ListTile(
+                    leading: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.amber.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.bookmark, color: Colors.amber, size: 20),
+                    ),
+                    title: const Text(
+                      'Test Bookmark Reminder',
+                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                    ),
+                    subtitle: Text(
+                      'Kirim reminder ke akun admin ini',
+                      style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                    ),
+                    trailing: _isTestingNotification
+                        ? const SizedBox(
+                            width: 20, height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.chevron_right, color: Colors.grey),
+                    onTap: _isTestingNotification ? null : () => _sendTestNotification('reminder'),
+                  ),
+                  Divider(height: 1, color: theme.dividerColor),
+                  ListTile(
+                    leading: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.run_circle, color: AppColors.primary, size: 20),
+                    ),
+                    title: const Text(
+                      'Jalankan Cron Bookmark Reminder',
+                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                    ),
+                    subtitle: Text(
+                      'Trigger job harian sekarang (cek unread bookmark >24 jam)',
+                      style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                    ),
+                    trailing: _isTestingNotification
+                        ? const SizedBox(
+                            width: 20, height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.chevron_right, color: Colors.grey),
+                    onTap: _isTestingNotification ? null : () => _sendTestNotification('run-job'),
+                  ),
+                  if (_testLastResult != null)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          _testLastResult!,
+                          style: TextStyle(fontSize: 12, color: Colors.blue.shade900),
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
